@@ -1,0 +1,919 @@
+openapi: "3.1.0"
+info:
+  title: Climbing App API
+  description: API for the Climbing Gym Boulder Creator app
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication and user registration
+  - name: Gyms
+    description: Gym management
+  - name: Wall Images
+    description: Wall image upload and retrieval
+  - name: Boulders
+    description: Boulder creation and viewing
+
+paths:
+  /api/auth/register:
+    post:
+      operationId: authRegister
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/login:
+    post:
+      operationId: authLogin
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/logout:
+    post:
+      operationId: authLogout
+      tags: [Auth]
+      summary: Logout (revoke a refresh token)
+      description: Revokes the presented refresh token. Idempotent — always returns 204, even if the token is already invalid.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: Refresh token revoked
+  /api/auth/logout-all:
+    post:
+      operationId: authLogoutAll
+      tags: [Auth]
+      summary: Logout from all devices
+      description: Revokes every refresh token family belonging to the authenticated user.
+      responses:
+        '204':
+          description: All sessions revoked
+        '401':
+          description: Missing or invalid access token
+      security:
+        - bearerAuth: []
+  /api/auth/refresh:
+    post:
+      operationId: authRefresh
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+  /api/auth/oauth/google:
+    post:
+      operationId: authOauthGoogle
+      tags: [Auth]
+      summary: Sign in with Google
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid Google token
+  /api/auth/oauth/apple:
+    post:
+      operationId: authOauthApple
+      tags: [Auth]
+      summary: Sign in with Apple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid Apple token
+  /api/gyms:
+    get:
+      operationId: listGyms
+      tags: [Gyms]
+      summary: List all gyms
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of gyms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GymPageResponse'
+      security:
+          - bearerAuth: []
+    post:
+      operationId: createGym
+      tags: [Gyms]
+      summary: Create a new gym (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGymRequest'
+      responses:
+        '201':
+          description: Gym created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GymDto'
+        '403':
+          description: Forbidden - admin only
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}:
+    get:
+      operationId: getGymById
+      tags: [Gyms]
+      summary: Get gym by ID
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Gym details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GymDto'
+        '404':
+          description: Gym not found
+      security:
+        - bearerAuth: []
+    put:
+      operationId: updateGym
+      tags: [Gyms]
+      summary: Update gym (admin or gym owner)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGymRequest'
+      responses:
+        '200':
+          description: Gym updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GymDto'
+        '403':
+          description: Forbidden
+        '404':
+          description: Gym not found
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}/owners:
+    post:
+      operationId: assignGymOwner
+      tags: [Gyms]
+      summary: Assign a gym owner (admin only)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignOwnerRequest'
+      responses:
+        '201':
+          description: Owner assigned
+        '403':
+          description: Forbidden - admin only
+        '404':
+          description: Gym or user not found
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}/wall-images:
+    get:
+      operationId: listWallImages
+      tags: [Wall Images]
+      summary: List wall images for a gym
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of wall image summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WallImagePageResponse'
+      security:
+        - bearerAuth: []
+    post:
+      operationId: uploadWallImage
+      tags: [Wall Images]
+      summary: Upload a wall image (admin or gym owner)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WallImageUploadRequest'
+      responses:
+        '201':
+          description: Image uploaded successfully
+        '400':
+          description: Invalid file
+        '403':
+          description: Forbidden
+      security:
+        - bearerAuth: []
+  /api/wall-images/{wallImageId}:
+    get:
+      operationId: getWallImageById
+      tags: [Wall Images]
+      summary: Get wall image metadata
+      parameters:
+        - name: wallImageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Wall image metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WallImageDetail'
+        '404':
+          description: Wall image not found
+      security:
+        - bearerAuth: []
+  /api/wall-images/{wallImageId}/data:
+    get:
+      operationId: getWallImageData
+      tags: [Wall Images]
+      summary: Download full wall image
+      parameters:
+        - name: wallImageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Wall image binary data
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Wall image not found
+      security:
+        - bearerAuth: []
+  /api/wall-images/{wallImageId}/thumbnail:
+    get:
+      operationId: getWallImageThumbnail
+      tags: [Wall Images]
+      summary: Download wall image thumbnail
+      parameters:
+        - name: wallImageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thumbnail binary data
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Wall image not found
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}/boulders:
+    get:
+      operationId: listBoulders
+      tags: [Boulders]
+      summary: List boulders for a gym
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of boulders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoulderPageResponse'
+      security:
+        - bearerAuth: []
+    post:
+      operationId: createBoulder
+      tags: [Boulders]
+      summary: Create a boulder with inline holds
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBoulderRequest'
+      responses:
+        '201':
+          description: Boulder created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoulderDto'
+        '400':
+          description: Invalid input
+      security:
+        - bearerAuth: []
+  /api/wall-images/{wallImageId}/boulders:
+    get:
+      operationId: listBouldersByWall
+      tags: [Boulders]
+      summary: List boulders for a wall image
+      parameters:
+        - name: wallImageId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of boulders on the wall image
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoulderPageResponse'
+      security:
+        - bearerAuth: []
+  /api/boulders/{boulderId}:
+    get:
+      operationId: getBoulderById
+      tags: [Boulders]
+      summary: Get boulder detail with holds
+      parameters:
+        - name: boulderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Boulder details with holds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoulderDetailDto'
+        '404':
+          description: Boulder not found
+      security:
+        - bearerAuth: []
+    put:
+      operationId: updateBoulder
+      tags: [Boulders]
+      summary: Update boulder (creator only)
+      parameters:
+        - name: boulderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBoulderRequest'
+      responses:
+        '200':
+          description: Boulder updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoulderDto'
+        '403':
+          description: Forbidden - not the creator
+        '404':
+          description: Boulder not found
+      security:
+        - bearerAuth: []
+    delete:
+      operationId: deleteBoulder
+      tags: [Boulders]
+      summary: Delete boulder (creator or admin)
+      parameters:
+        - name: boulderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Boulder deleted
+        '403':
+          description: Forbidden
+        '404':
+          description: Boulder not found
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - name
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    RefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+    OAuthRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+        idToken:
+          type: string
+        name:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserDto'
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, USER]
+    GymDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        createdByAdminId:
+          type: integer
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+          nullable: true
+    CreateGymRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        createdBy:
+          type: integer
+    UpdateGymRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+    AssignOwnerRequest:
+      type: object
+      required:
+        - userId
+        - assignedBy
+      properties:
+        userId:
+          type: integer
+        assignedBy:
+          type: integer
+    WallImageSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        gymId:
+          type: integer
+        wallName:
+          type: string
+        isActual:
+          type: boolean
+        mimeType:
+          type: string
+        widthPx:
+          type: integer
+          nullable: true
+        heightPx:
+          type: integer
+          nullable: true
+        uploadedBy:
+          type: integer
+        uploadedDate:
+          type: string
+          format: date-time
+        thumbnailUrl:
+          type: string
+    WallImageDetail:
+      allOf:
+        - $ref: '#/components/schemas/WallImageSummary'
+        - type: object
+          properties:
+            imageUrl:
+              type: string
+
+    WallImageUploadRequest:
+      type: object
+      required:
+        - image
+        - wallName
+        - uploadedBy
+      properties:
+        image:
+          type: string
+          format: binary
+          description: Wall photo file (JPEG, PNG, or WebP)
+        wallName:
+          type: string
+          description: Name of the physical wall (e.g. "Cave", "Slab Left")
+        uploadedBy:
+          type: integer
+          description: ID of the user who uploaded the image
+
+    BoulderDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        gymId:
+          type: integer
+        wallImageId:
+          type: integer
+        creatorId:
+          type: integer
+        name:
+          type: string
+        grade:
+          type: string
+        description:
+          type: string
+          nullable: true
+        wallActual:
+          type: boolean
+        createdDate:
+          type: string
+          format: date-time
+        updatedDate:
+          type: string
+          format: date-time
+          nullable: true
+    BoulderDetailDto:
+      allOf:
+        - $ref: '#/components/schemas/BoulderDto'
+        - type: object
+          properties:
+            holds:
+              type: array
+              items:
+                $ref: '#/components/schemas/HoldDto'
+    CreateBoulderRequest:
+      type: object
+      required:
+        - name
+        - grade
+        - wallImageId
+        - holds
+        - createdBy
+      properties:
+        name:
+          type: string
+        grade:
+          type: string
+          description: Fontainebleau grade (e.g. 6A+, 7B)
+        description:
+          type: string
+        wallImageId:
+          type: integer
+        createdBy:
+          type: integer
+        holds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateHoldRequest'
+    UpdateBoulderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        grade:
+          type: string
+        description:
+          type: string
+          nullable: true
+    CreateHoldRequest:
+      type: object
+      required:
+        - xRatio
+        - yRatio
+        - radiusRatio
+      properties:
+        xRatio:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        yRatio:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        radiusRatio:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        sequenceOrder:
+          type: integer
+    HoldDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        boulderId:
+          type: integer
+        xRatio:
+          type: number
+          format: float
+        yRatio:
+          type: number
+          format: float
+        radiusRatio:
+          type: number
+          format: float
+        sequenceOrder:
+          type: integer
+          nullable: true
+    PageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+        empty:
+          type: boolean
+    GymPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/GymDto'
+    WallImagePageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/WallImageSummary'
+    BoulderPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/BoulderDto'
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        status:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time

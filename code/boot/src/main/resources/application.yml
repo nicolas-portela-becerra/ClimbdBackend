@@ -1,0 +1,31 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  application:
+    name: climbing
+    secret: ${SECRET}
+  data:
+    redis:
+      host: ${HOST}
+      port: 6379
+  datasource:
+    url: jdbc:postgresql://${HOST}:5432/postgres
+    username: postgres
+    password: example
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+        hibernate:
+          default_schema: climbing
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: climbing
+    default-schema: climbing
+server:
+  port: 8080
