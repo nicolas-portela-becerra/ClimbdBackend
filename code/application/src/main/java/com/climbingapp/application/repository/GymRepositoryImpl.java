@@ -4,11 +4,7 @@ import com.climbingapp.domain.dto.GymDTO;
 import com.climbingapp.domain.mapper.GymMapper;
 import com.climbingapp.domain.repository.GymRepository;
 import com.climbingapp.infrastructure.entity.GymEntity;
-import com.climbingapp.infrastructure.entity.UserEntity;
 import com.climbingapp.infrastructure.repository.GymJPARepository;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,8 +18,6 @@ public class GymRepositoryImpl implements GymRepository {
 
     @Autowired private GymMapper mapper;
 
-    @PersistenceContext private EntityManager entityManager;
-
     @Override
     public GymDTO findById(Integer id) {
         return jpaRepository.findById(id).map(mapper::toDto).orElse(null);
@@ -32,12 +26,7 @@ public class GymRepositoryImpl implements GymRepository {
     @Override
     public GymDTO save(GymDTO gym) {
         GymEntity entity = mapper.toEntity(gym);
-        if (gym.getCreatedByAdminId() != null) {
-            entity.setCreatedByAdmin(
-                    entityManager.getReference(UserEntity.class, gym.getCreatedByAdminId()));
-        }
-        GymEntity saved = jpaRepository.save(entity);
-        return mapper.toDto(saved);
+        return mapper.toDto(jpaRepository.save(entity));
     }
 
     @Override

@@ -12,5 +12,5 @@ public interface BoulderJPARepository extends JpaRepository<BoulderEntity, Integ
 
     Page<BoulderEntity> findByWallImageId(Integer wallImageId, Pageable pageable);
 
-    boolean existsByIdAndCreatorEmail(Integer id, String email);
+    boolean existsByIdAndCreatorId(Integer id, Integer creatorId);
 }

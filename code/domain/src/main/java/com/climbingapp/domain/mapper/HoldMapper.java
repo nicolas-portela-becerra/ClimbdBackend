@@ -11,10 +11,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface HoldMapper {
 
-    @Mapping(target = "boulderId", source = "entity.boulder.id")
     HoldDTO toDto(HoldEntity entity);
 
-    @Mapping(target = "boulder", ignore = true)
     HoldEntity toEntity(HoldDTO dto);
 
     List<HoldDTO> toDtoList(List<HoldEntity> entities);

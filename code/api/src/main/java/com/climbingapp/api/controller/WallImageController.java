@@ -107,7 +107,6 @@ public class WallImageController implements WallImagesApi {
         WallImageDTO wallImage = new WallImageDTO();
         wallImage.setGymId(gymId);
         wallImage.setWallName(wallName.trim());
-        wallImage.setIsActual(true);
         wallImage.setImageData(readBytes(image));
         wallImage.setThumbnail(
                 new byte[0]); // placeholder — the usecase generates the real thumbnail

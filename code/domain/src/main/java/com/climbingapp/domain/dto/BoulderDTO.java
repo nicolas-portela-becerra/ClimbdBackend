@@ -26,8 +26,6 @@ public class BoulderDTO {
 
     private String description;
 
-    @EqualsAndHashCode.Exclude private Boolean wallActual;
-
     @EqualsAndHashCode.Exclude private LocalDateTime createdDate;
 
     @EqualsAndHashCode.Exclude private LocalDateTime updatedDate;
