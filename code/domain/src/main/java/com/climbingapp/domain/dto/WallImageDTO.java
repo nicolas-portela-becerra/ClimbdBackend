@@ -17,8 +17,6 @@ public class WallImageDTO {
 
     private String wallName;
 
-    private Boolean isActual;
-
     private byte[] imageData;
 
     private byte[] thumbnail;
@@ -28,8 +26,6 @@ public class WallImageDTO {
     private Integer widthPx;
 
     private Integer heightPx;
-
-    private Integer minDimensionPx;
 
     private Integer uploadedBy;
 

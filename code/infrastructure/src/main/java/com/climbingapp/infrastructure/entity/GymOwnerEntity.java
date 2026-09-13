@@ -21,17 +21,14 @@ public class GymOwnerEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gym_id", nullable = false)
-    private GymEntity gym;
+    @Column(name = "gym_id", nullable = false)
+    private Integer gymId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by", nullable = false)
-    private UserEntity assignedBy;
+    @Column(name = "assigned_by", nullable = false)
+    private Integer assignedBy;
 
     @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt;

@@ -2,12 +2,9 @@ package com.climbingapp.infrastructure.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import lombok.Getter;
@@ -27,15 +24,11 @@ public class WallImageEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gym_id", nullable = false)
-    private GymEntity gym;
+    @Column(name = "gym_id", nullable = false)
+    private Integer gymId;
 
     @Column(name = "wall_name", nullable = false)
     private String wallName;
-
-    @Column(name = "is_actual", nullable = false)
-    private Boolean isActual;
 
     @Column(name = "image_data", nullable = false)
     private byte[] imageData;
@@ -52,12 +45,8 @@ public class WallImageEntity {
     @Column(name = "height_px")
     private Integer heightPx;
 
-    @Column(name = "min_dimension_px")
-    private Integer minDimensionPx;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by", nullable = false)
-    private UserEntity uploadedBy;
+    @Column(name = "uploaded_by", nullable = false)
+    private Integer uploadedBy;
 
     @Column(name = "uploaded_date", nullable = false)
     private LocalDateTime uploadedDate;
