@@ -53,8 +53,7 @@ final class ExifOrientation {
                 byte[] segment = new byte[length - 2];
                 in.readFully(segment);
                 if (segment.length > EXIF_HEADER.length
-                        && Arrays.equals(
-                                Arrays.copyOf(segment, EXIF_HEADER.length), EXIF_HEADER)) {
+                        && Arrays.equals(Arrays.copyOf(segment, EXIF_HEADER.length), EXIF_HEADER)) {
                     return Arrays.copyOfRange(segment, EXIF_HEADER.length, segment.length);
                 }
                 // APP1 but not Exif — keep walking

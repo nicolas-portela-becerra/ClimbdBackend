@@ -10,7 +10,6 @@ import com.climbingapp.domain.dto.GymDTO;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.GymUseCase;
 
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

@@ -32,7 +32,10 @@ class ExifOrientationTest {
 
     @Test
     void returnsNormalForJpegWithoutExif() {
-        assertEquals(1, ExifOrientation.read(new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xD9}));
+        assertEquals(
+                1,
+                ExifOrientation.read(
+                        new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xD9}));
     }
 
     @Test
@@ -63,16 +66,60 @@ class ExifOrientationTest {
         byte[] tiff =
                 bigEndian
                         ? new byte[] {
-                            'M', 'M', 0, 42, 0, 0, 0, 8,
-                            0, 1,
-                            0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, (byte) orientation, 0, 0,
-                            0, 0, 0, 0
+                            'M',
+                            'M',
+                            0,
+                            42,
+                            0,
+                            0,
+                            0,
+                            8,
+                            0,
+                            1,
+                            0x01,
+                            0x12,
+                            0,
+                            3,
+                            0,
+                            0,
+                            0,
+                            1,
+                            0,
+                            (byte) orientation,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
                         }
                         : new byte[] {
-                            'I', 'I', 42, 0, 8, 0, 0, 0,
-                            1, 0,
-                            0x12, 0x01, 3, 0, 1, 0, 0, 0, (byte) orientation, 0, 0, 0,
-                            0, 0, 0, 0
+                            'I',
+                            'I',
+                            42,
+                            0,
+                            8,
+                            0,
+                            0,
+                            0,
+                            1,
+                            0,
+                            0x12,
+                            0x01,
+                            3,
+                            0,
+                            1,
+                            0,
+                            0,
+                            0,
+                            (byte) orientation,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
                         };
         byte[] exifHeader = {'E', 'x', 'i', 'f', 0, 0};
         byte[] exifPayload = new byte[exifHeader.length + tiff.length];

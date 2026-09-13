@@ -1,4 +1,5 @@
 package com.climbingapp.application.usecase;
+
 import com.climbingapp.domain.usecase.ImageCompressionUseCase;
 
 import org.springframework.stereotype.Service;
