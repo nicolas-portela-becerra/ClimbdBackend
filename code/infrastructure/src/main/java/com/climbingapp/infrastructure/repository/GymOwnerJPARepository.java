@@ -10,7 +10,5 @@ public interface GymOwnerJPARepository extends JpaRepository<GymOwnerEntity, Int
 
     boolean existsByGymIdAndUserId(Integer gymId, Integer userId);
 
-    boolean existsByGymIdAndUserEmail(Integer gymId, String email);
-
     List<GymOwnerEntity> findByGymId(Integer gymId);
 }

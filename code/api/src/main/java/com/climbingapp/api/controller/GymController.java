@@ -10,7 +10,6 @@ import com.climbingapp.domain.dto.GymDTO;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.GymUseCase;
 
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -84,7 +83,7 @@ public class GymController implements GymsApi {
         gym.setName(createGymRequest.getName());
         gym.setLocation(createGymRequest.getLocation());
         gym.setDescription(createGymRequest.getDescription());
-        gym.setCreatedByAdminId(createGymRequest.getCreatedBy());
+        gym.setCreatorId(createGymRequest.getCreatedBy());
         gym.setCreatedDate(LocalDateTime.now());
         return gym;
     }

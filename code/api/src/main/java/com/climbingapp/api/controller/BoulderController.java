@@ -61,7 +61,8 @@ public class BoulderController implements BouldersApi {
     @Override
     public ResponseEntity<BoulderDto> createBoulder(
             @PathVariable("gymId") Integer gymId, CreateBoulderRequest createBoulderRequest) {
-        //Safety check in case someone tries to create a boulder in a wall that does not match the gym or does not exist
+        // Safety check in case someone tries to create a boulder in a wall that does not match the
+        // gym or does not exist
         WallImageDTO wallImage =
                 wallImageUseCase.getWallImageById(createBoulderRequest.getWallImageId());
         if (wallImage == null || !gymId.equals(wallImage.getGymId())) {
@@ -76,7 +77,7 @@ public class BoulderController implements BouldersApi {
                         ? createBoulderRequest.getHolds()
                         : List.of();
         List<HoldDTO> holds = new ArrayList<>(requestHolds.size());
-        //TODO: hold order does not matter at all, remove the sequence property
+        // TODO: hold order does not matter at all, remove the sequence property
         for (int i = 0; i < requestHolds.size(); i++) {
             HoldDTO hold = mapper.toDomainHold(requestHolds.get(i));
             if (hold.getSequenceOrder() == null) {

@@ -17,5 +17,5 @@ public interface BoulderRepository {
 
     void deleteById(Integer id);
 
-    boolean existsByIdAndCreatorEmail(Integer id, String email);
+    boolean existsByIdAndCreatorId(Integer id, Integer creatorId);
 }

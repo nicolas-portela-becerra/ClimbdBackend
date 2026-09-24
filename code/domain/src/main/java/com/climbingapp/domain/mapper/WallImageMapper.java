@@ -11,12 +11,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface WallImageMapper {
 
-    @Mapping(target = "gymId", source = "entity.gym.id")
-    @Mapping(target = "uploadedBy", source = "entity.uploadedBy.id")
     WallImageDTO toDto(WallImageEntity entity);
 
-    @Mapping(target = "gym", ignore = true)
-    @Mapping(target = "uploadedBy", ignore = true)
     WallImageEntity toEntity(WallImageDTO dto);
 
     List<WallImageDTO> toDtoList(List<WallImageEntity> entities);

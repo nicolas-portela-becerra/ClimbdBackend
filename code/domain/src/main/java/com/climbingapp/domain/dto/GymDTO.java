@@ -20,7 +20,7 @@ public class GymDTO {
 
     private String description;
 
-    @EqualsAndHashCode.Exclude private Integer createdByAdminId;
+    @EqualsAndHashCode.Exclude private Integer creatorId;
 
     @EqualsAndHashCode.Exclude private LocalDateTime createdDate;
 

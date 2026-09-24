@@ -3,6 +3,7 @@ package com.climbingapp.application.usecase;
 import com.climbingapp.domain.dto.WallImageDTO;
 import com.climbingapp.domain.repository.WallImageRepository;
 import com.climbingapp.domain.usecase.ImageCompressionUseCase;
+import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.climbingapp.domain.usecase.WallImageUseCase;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +21,15 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
 
     @Autowired private ImageCompressionUseCase imageCompressionUseCase;
 
+    @Autowired private ImageProcessorUseCase imageProcessorUseCase;
+
     @Override
     public WallImageDTO uploadWallImage(WallImageDTO wallImageDTO) {
         try {
             wallImageDTO.setImageData(
-                    imageCompressionUseCase.compress(wallImageDTO.getImageData(), 1920));
+                    imageProcessorUseCase.compress(wallImageDTO.getImageData(), 1920));
             wallImageDTO.setThumbnail(
-                    imageCompressionUseCase.createThumbnail(wallImageDTO.getImageData(), 300));
+                    imageProcessorUseCase.createThumbnail(wallImageDTO.getImageData(), 300));
             wallImageDTO.setMimeType("image/jpeg");
             return wallImageRepository.save(wallImageDTO);
         } catch (IllegalArgumentException e) {

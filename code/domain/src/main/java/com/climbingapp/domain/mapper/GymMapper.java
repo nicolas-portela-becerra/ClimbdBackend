@@ -11,10 +11,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface GymMapper {
 
-    @Mapping(target = "createdByAdminId", source = "entity.createdByAdmin.id")
     GymDTO toDto(GymEntity entity);
 
-    @Mapping(target = "createdByAdmin", ignore = true)
     GymEntity toEntity(GymDTO dto);
 
     List<GymDTO> toDtoList(List<GymEntity> entities);

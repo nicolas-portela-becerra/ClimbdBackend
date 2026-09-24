@@ -3,7 +3,6 @@ package com.climbingapp.application.repository;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.mapper.HoldMapper;
 import com.climbingapp.domain.repository.HoldRepository;
-import com.climbingapp.infrastructure.entity.BoulderEntity;
 import com.climbingapp.infrastructure.entity.HoldEntity;
 import com.climbingapp.infrastructure.repository.HoldJPARepository;
 
