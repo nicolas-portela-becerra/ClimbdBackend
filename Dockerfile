@@ -1,5 +1,5 @@
 FROM eclipse-temurin:21-jdk-alpine AS build
-FROM maven:3.9.16-clipse-temurin-21 AS mvn
+FROM maven:3.9.16-eclipse-temurin-21 AS mvn
 WORKDIR /app
 COPY ./code .
 RUN mvn package -DskipTests -B
