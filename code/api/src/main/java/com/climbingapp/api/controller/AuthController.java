@@ -5,7 +5,7 @@ import com.climbingapp.api.dto.LoginRequest;
 import com.climbingapp.api.dto.OAuthRequest;
 import com.climbingapp.api.dto.RefreshRequest;
 import com.climbingapp.api.dto.RegisterRequest;
-import com.climbingapp.api.dto.UserDto;
+import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
@@ -49,6 +49,8 @@ public class AuthController implements AuthApi {
 
     @Autowired private UserUseCase userUseCase;
 
+    @Autowired private ApiDtoMapper mapper;
+
     @Override
     public ResponseEntity<AuthResponse> authLogin(LoginRequest loginRequest) {
         String email = normalize(loginRequest.getEmail());
@@ -86,7 +88,9 @@ public class AuthController implements AuthApi {
             Claims claims = tokenManager.getPayload(refreshToken);
             String username = claims.getSubject();
             UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(normalize(username));
-            if (!tokenManager.validateRefreshToken(claims, userDetails)) {
+            if (!userDetails.isEnabled()
+                    || !tokenManager.validateRefreshToken(claims, userDetails)) {
+                log.warn("Refresh rejected for deactivated or invalid user {}", username);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             String jti = claims.getId();
@@ -157,15 +161,9 @@ public class AuthController implements AuthApi {
     }
 
     private AuthResponse buildAuthResponse(String accessToken, String refreshToken, UserDTO user) {
-        UserDto responseUser =
-                new UserDto()
-                        .id(user.getId())
-                        .email(user.getEmail())
-                        .name(user.getName())
-                        .role(UserDto.RoleEnum.fromValue(user.getRole()));
         return new AuthResponse()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(responseUser);
+                .user(mapper.toUserDto(user));
     }
 }

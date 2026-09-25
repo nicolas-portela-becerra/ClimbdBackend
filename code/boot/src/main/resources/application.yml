@@ -27,5 +27,7 @@ spring:
     locations: classpath:db/migration
     schemas: climbing
     default-schema: climbing
+    baseline-on-migrate: true
+    baseline-version: 1.0.0
 server:
   port: 8080
