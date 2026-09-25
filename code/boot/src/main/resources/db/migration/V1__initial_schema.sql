@@ -1,4 +1,4 @@
-CREATE TABLE "user" (
+CREATE TABLE IF NOT EXISTS "user" (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE "user" (
     updated_date TIMESTAMP
 );
 
-CREATE TABLE gym (
+CREATE TABLE IF NOT EXISTS gym (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     location VARCHAR(255),
@@ -20,7 +20,7 @@ CREATE TABLE gym (
     updated_date TIMESTAMP
 );
 
-CREATE TABLE gym_owner (
+CREATE TABLE IF NOT EXISTS gym_owner (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES "user"(id),
     gym_id INT NOT NULL REFERENCES gym(id),
@@ -29,7 +29,7 @@ CREATE TABLE gym_owner (
     UNIQUE(user_id, gym_id)
 );
 
-CREATE TABLE wall_image (
+CREATE TABLE IF NOT EXISTS wall_image (
     id SERIAL PRIMARY KEY,
     gym_id INT NOT NULL REFERENCES gym(id),
     wall_name VARCHAR(255) NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE wall_image (
     uploaded_date TIMESTAMP NOT NULL
 );
 
-CREATE TABLE boulder (
+CREATE TABLE IF NOT EXISTS boulder (
     id SERIAL PRIMARY KEY,
     gym_id INT NOT NULL REFERENCES gym(id),
     wall_image_id INT NOT NULL REFERENCES wall_image(id),
@@ -56,7 +56,7 @@ CREATE TABLE boulder (
     updated_date TIMESTAMP
 );
 
-CREATE TABLE "hold" (
+CREATE TABLE IF NOT EXISTS "hold" (
     id SERIAL PRIMARY KEY,
     boulder_id INT NOT NULL REFERENCES boulder(id),
     x_ratio NUMERIC(5,4) NOT NULL,
