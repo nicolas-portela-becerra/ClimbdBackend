@@ -4,7 +4,6 @@ import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.infrastructure.entity.HoldEntity;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 

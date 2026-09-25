@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class UserUseCaseImpl implements UserUseCase {
@@ -26,6 +27,16 @@ public class UserUseCaseImpl implements UserUseCase {
         }
         UserDTO newUser = buildUser(name, normalizedEmail);
         return userRepository.saveWithPassword(newUser, passwordEncoder.encode(rawPassword));
+    }
+
+    @Override
+    public List<UserDTO> getDeactivatedUsers() {
+        return userRepository.findDeactivatedUsers();
+    }
+
+    @Override
+    public void activateUsers(List<Integer> userId) {
+        userRepository.activateUsers(userId);
     }
 
     private UserDTO buildUser(String name, String normalizedEmail) {

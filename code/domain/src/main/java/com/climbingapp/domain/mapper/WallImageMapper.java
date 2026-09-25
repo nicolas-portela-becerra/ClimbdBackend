@@ -4,7 +4,6 @@ import com.climbingapp.domain.dto.WallImageDTO;
 import com.climbingapp.infrastructure.entity.WallImageEntity;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 

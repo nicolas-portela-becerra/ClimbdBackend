@@ -7,14 +7,15 @@ import com.climbingapp.api.dto.CreateHoldRequest;
 import com.climbingapp.api.dto.GymDto;
 import com.climbingapp.api.dto.GymPageResponse;
 import com.climbingapp.api.dto.HoldDto;
+import com.climbingapp.api.dto.UserDto;
 import com.climbingapp.api.dto.WallImageDetail;
 import com.climbingapp.api.dto.WallImagePageResponse;
 import com.climbingapp.api.dto.WallImageSummary;
 import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.GymDTO;
 import com.climbingapp.domain.dto.HoldDTO;
+import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,10 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ApiDtoMapper {
+
+    UserDto toUserDto(UserDTO userDto);
+
+    List<UserDto> toUserDtos(List<UserDTO> userDtos);
 
     GymDto toApiGym(GymDTO dto);
 

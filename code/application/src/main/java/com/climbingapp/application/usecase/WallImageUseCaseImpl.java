@@ -2,7 +2,6 @@ package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.dto.WallImageDTO;
 import com.climbingapp.domain.repository.WallImageRepository;
-import com.climbingapp.domain.usecase.ImageCompressionUseCase;
 import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.climbingapp.domain.usecase.WallImageUseCase;
 
@@ -18,8 +17,6 @@ import org.springframework.stereotype.Service;
 public class WallImageUseCaseImpl implements WallImageUseCase {
 
     @Autowired private WallImageRepository wallImageRepository;
-
-    @Autowired private ImageCompressionUseCase imageCompressionUseCase;
 
     @Autowired private ImageProcessorUseCase imageProcessorUseCase;
 

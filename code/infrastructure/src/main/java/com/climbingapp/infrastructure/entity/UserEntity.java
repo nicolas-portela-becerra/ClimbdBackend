@@ -42,6 +42,9 @@ public class UserEntity {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "active")
+    private boolean active;
+
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate;
 

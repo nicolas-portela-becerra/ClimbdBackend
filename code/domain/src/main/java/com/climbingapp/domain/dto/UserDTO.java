@@ -23,6 +23,8 @@ public class UserDTO {
 
     private String providerUserId;
 
+    private boolean active;
+
     private LocalDateTime createdDate;
 
     private LocalDateTime updatedDate;

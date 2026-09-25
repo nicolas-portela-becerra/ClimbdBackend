@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,6 +28,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 new ErrorResponse()
                         .message("Invalid credentials")
+                        .status(HttpStatus.UNAUTHORIZED.value()),
+                HttpStatus.UNAUTHORIZED);
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler({DisabledException.class})
+    public ResponseEntity<ErrorResponse> handleDisabledException() {
+        log.warn("Authentication attempt on a deactivated account");
+        return new ResponseEntity<>(
+                new ErrorResponse()
+                        .message("User account is deactivated")
                         .status(HttpStatus.UNAUTHORIZED.value()),
                 HttpStatus.UNAUTHORIZED);
     }

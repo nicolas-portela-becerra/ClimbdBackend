@@ -15,6 +15,8 @@ import com.climbingapp.api.dto.AuthResponse;
 import com.climbingapp.api.dto.LoginRequest;
 import com.climbingapp.api.dto.RefreshRequest;
 import com.climbingapp.api.dto.RegisterRequest;
+import com.climbingapp.api.dto.UserDto;
+import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
@@ -59,6 +61,8 @@ class AuthControllerTest {
 
     @Mock private UserUseCase userUseCase;
 
+    @Mock private ApiDtoMapper mapper;
+
     @InjectMocks private AuthController controller;
 
     private UserDetails userDetails;
@@ -89,6 +93,7 @@ class AuthControllerTest {
         when(tokenManager.generateAccessToken(userDetails)).thenReturn("access-token");
         when(refreshTokenService.issue(userDetails, null)).thenReturn("refresh-token");
         when(userRepository.findByEmail("user@test.com")).thenReturn(userDto);
+        when(mapper.toUserDto(userDto)).thenReturn(new UserDto().email("user@test.com"));
 
         ResponseEntity<AuthResponse> response =
                 controller.authLogin(new LoginRequest().email("User@Test.com").password("secret"));
@@ -106,10 +111,11 @@ class AuthControllerTest {
     void registerDelegatesToUserUseCaseAndReturnsCreatedWithTokens() {
         when(userUseCase.register("Test", "user@test.com", "password123")).thenReturn(userDto);
         when(userRepository.findCredentialsByEmail("user@test.com"))
-                .thenReturn(new UserCredentials(1, "user@test.com", "hash", "USER"));
+                .thenReturn(new UserCredentials(1, "user@test.com", "hash", "USER", true));
         when(tokenManager.generateAccessToken(any(UserDetails.class))).thenReturn("access-token");
         when(refreshTokenService.issue(any(UserDetails.class), isNull()))
                 .thenReturn("refresh-token");
+        when(mapper.toUserDto(userDto)).thenReturn(new UserDto().email("user@test.com"));
 
         ResponseEntity<AuthResponse> response =
                 controller.authRegister(
@@ -156,6 +162,7 @@ class AuthControllerTest {
         when(tokenManager.generateAccessToken(userDetails)).thenReturn("new-access");
         when(refreshTokenService.issue(userDetails, "fam-1")).thenReturn("new-refresh");
         when(userRepository.findByEmail("user@test.com")).thenReturn(userDto);
+        when(mapper.toUserDto(userDto)).thenReturn(new UserDto().email("user@test.com"));
 
         ResponseEntity<AuthResponse> response =
                 controller.authRefresh(new RefreshRequest().refreshToken("old-token"));
