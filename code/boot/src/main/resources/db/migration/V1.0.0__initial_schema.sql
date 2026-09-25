@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS gym (
     name VARCHAR(255) NOT NULL,
     location VARCHAR(255),
     description TEXT,
-    created_by_admin_id INT NOT NULL REFERENCES "user"(id),
+    creator_id INT NOT NULL REFERENCES "user"(id),
     created_date TIMESTAMP NOT NULL,
     updated_date TIMESTAMP
 );
@@ -33,13 +33,11 @@ CREATE TABLE IF NOT EXISTS wall_image (
     id SERIAL PRIMARY KEY,
     gym_id INT NOT NULL REFERENCES gym(id),
     wall_name VARCHAR(255) NOT NULL,
-    is_actual BOOLEAN NOT NULL DEFAULT TRUE,
     image_data BYTEA NOT NULL,
     thumbnail BYTEA NOT NULL,
     mime_type VARCHAR(20) NOT NULL,
     width_px INT,
     height_px INT,
-    min_dimension_px INT,
     uploaded_by INT NOT NULL REFERENCES "user"(id),
     uploaded_date TIMESTAMP NOT NULL
 );
