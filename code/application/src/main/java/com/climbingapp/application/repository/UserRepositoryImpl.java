@@ -10,6 +10,8 @@ import com.climbingapp.infrastructure.repository.UserJPARepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
@@ -50,5 +52,15 @@ public class UserRepositoryImpl implements UserRepository {
     public UserDTO findById(int userId) {
         UserEntity entity = jpaRepository.findById(userId).orElse(null);
         return entity != null ? mapper.toDto(entity) : null;
+    }
+
+    @Override
+    public void activateUsers(List<Integer> userIds) {
+        jpaRepository.activateUsers(userIds);
+    }
+
+    @Override
+    public List<UserDTO> findDeactivatedUsers() {
+        return mapper.toDtoList(jpaRepository.findByActiveFalse());
     }
 }

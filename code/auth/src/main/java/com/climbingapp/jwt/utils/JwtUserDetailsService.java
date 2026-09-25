@@ -26,6 +26,10 @@ public class JwtUserDetailsService implements UserDetailsService {
             return new User(
                     credentials.email(),
                     credentials.passwordHash(),
+                    credentials.active(),
+                    true,
+                    true,
+                    true,
                     List.of(new SimpleGrantedAuthority("ROLE_" + credentials.role())));
         }
         throw new UsernameNotFoundException("User not found");
