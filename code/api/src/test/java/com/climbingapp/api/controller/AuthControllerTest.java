@@ -81,6 +81,7 @@ class AuthControllerTest {
                         "USER",
                         "LOCAL",
                         null,
+                        true,
                         LocalDateTime.now(),
                         null);
     }

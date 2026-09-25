@@ -10,6 +10,8 @@ servers:
 tags:
   - name: Auth
     description: Authentication and user registration
+  - name: Users
+    description: User management
   - name: Gyms
     description: Gym management
   - name: Wall Images
@@ -154,6 +156,93 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           description: Invalid Apple token
+  /api/users/deactivated:
+    get:
+      operationId: getDeactivated
+      tags: [Users]
+      summary: Get all deactivated users
+      responses:
+        '200':
+          description: List of deactivated users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeactivatedUsersResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/users/activate-users:
+    post:
+      operationId: activateUsers
+      tags: [Users]
+      summary: Activate users by their IDs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+      responses:
+        '200':
+          description: Users activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
   /api/gyms:
     get:
       operationId: listGyms
@@ -638,6 +727,13 @@ components:
         role:
           type: string
           enum: [ADMIN, USER]
+    DeactivatedUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDto'
     GymDto:
       type: object
       properties:

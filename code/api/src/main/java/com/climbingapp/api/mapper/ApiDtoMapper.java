@@ -16,6 +16,7 @@ import com.climbingapp.domain.dto.GymDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.data.domain.Page;
