@@ -68,7 +68,6 @@ CREATE TABLE IF NOT EXISTS "hold" (
 CREATE INDEX idx_gym_owner_user_id ON gym_owner(user_id);
 CREATE INDEX idx_gym_owner_gym_id ON gym_owner(gym_id);
 CREATE INDEX idx_wall_image_gym_id ON wall_image(gym_id);
-CREATE INDEX idx_wall_image_gym_actual ON wall_image(gym_id, is_actual);
 CREATE INDEX idx_boulder_gym_id ON boulder(gym_id);
 CREATE INDEX idx_boulder_wall_image_id ON boulder(wall_image_id);
 CREATE INDEX idx_boulder_created_date ON boulder(created_date DESC);
