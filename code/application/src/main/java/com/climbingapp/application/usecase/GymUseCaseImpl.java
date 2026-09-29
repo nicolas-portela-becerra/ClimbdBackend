@@ -7,6 +7,7 @@ import com.climbingapp.domain.repository.GymOwnerRepository;
 import com.climbingapp.domain.repository.GymRepository;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.GymUseCase;
+import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,9 +28,14 @@ public class GymUseCaseImpl implements GymUseCase {
 
     @Autowired private GymOwnerRepository gymOwnerRepository;
 
+    @Autowired private ImageProcessorUseCase imageProcessorUseCase;
+
     @Override
     public GymDTO createGym(GymDTO gymDTO) {
         try {
+            if (gymDTO.getLogo() != null) {
+                gymDTO.setLogo(imageProcessorUseCase.resize(gymDTO.getLogo(), 1200, 320));
+            }
             return gymRepository.save(gymDTO);
         } catch (Exception e) {
             log.error("Error creating gym: {}", e.getMessage());

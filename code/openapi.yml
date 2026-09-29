@@ -739,6 +739,10 @@ components:
       properties:
         id:
           type: integer
+        logo:
+          type: string
+          format: byte
+          nullable: true
         name:
           type: string
         location:
@@ -769,6 +773,10 @@ components:
           type: string
         createdBy:
           type: integer
+        logo:
+          type: string
+          format: byte
+          nullable: true
     UpdateGymRequest:
       type: object
       properties:
@@ -935,7 +943,7 @@ components:
           format: float
           minimum: 0
           maximum: 1
-        sequenceOrder:
+        color:
           type: integer
     HoldDto:
       type: object
@@ -953,7 +961,7 @@ components:
         radiusRatio:
           type: number
           format: float
-        sequenceOrder:
+        color:
           type: integer
           nullable: true
     PageResponse:

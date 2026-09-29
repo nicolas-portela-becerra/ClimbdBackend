@@ -80,8 +80,8 @@ public class BoulderController implements BouldersApi {
         // TODO: hold order does not matter at all, remove the sequence property
         for (int i = 0; i < requestHolds.size(); i++) {
             HoldDTO hold = mapper.toDomainHold(requestHolds.get(i));
-            if (hold.getSequenceOrder() == null) {
-                hold.setSequenceOrder(i);
+            if (hold.getColor() == null) {
+                hold.setColor(i);
             }
             hold.setCreatedDate(LocalDateTime.now());
             holds.add(hold);

@@ -2,6 +2,7 @@ package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.sksamuel.scrimage.ImmutableImage;
+import com.sksamuel.scrimage.Position;
 import com.sksamuel.scrimage.ScaleMethod;
 import com.sksamuel.scrimage.metadata.ImageMetadata;
 import com.sksamuel.scrimage.metadata.Tag;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -61,14 +63,29 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
         }
         ImmutableImage source = readBytes(imageData);
         double scale = Math.min(1.0, (double) width / source.width);
-        ImmutableImage compressedSource = source.scale(scale, ScaleMethod.FastScale);
+        ImmutableImage compressedSource = source.scale(scale, ScaleMethod.Bicubic);
 
-        ImageWriter writer = new JpegWriter(50, true);
+        ImageWriter writer = new JpegWriter(70, true);
         byte[] processedImage = null;
         try {
             processedImage = compressedSource.bytes(writer);
         } catch (IOException e) {
-            throw new RuntimeException("Error while compressing image", e);
+            throw new RuntimeException("Error while creating thumbnail", e);
+        }
+        return processedImage;
+    }
+
+    @Override
+    public byte[] resize(byte[] imageData, int width, int height) {
+        ImmutableImage source = readBytes(imageData);
+        ImmutableImage resized = source.fit(1200, 300);
+        ImmutableImage compressedSource = resized.scale(0.8, ScaleMethod.Bicubic);
+        ImageWriter writer = new JpegWriter(90, true);
+        byte[] processedImage = null;
+        try {
+            processedImage = compressedSource.bytes(writer);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while resizing image", e);
         }
         return processedImage;
     }

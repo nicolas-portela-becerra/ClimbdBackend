@@ -85,6 +85,7 @@ public class GymController implements GymsApi {
         gym.setDescription(createGymRequest.getDescription());
         gym.setCreatorId(createGymRequest.getCreatedBy());
         gym.setCreatedDate(LocalDateTime.now());
+        gym.setLogo(createGymRequest.getLogo());
         return gym;
     }
 

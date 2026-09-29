@@ -24,6 +24,9 @@ public class GymEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "logo")
+    private byte[] logo;
+
     @Column(name = "name", nullable = false)
     private String name;
 

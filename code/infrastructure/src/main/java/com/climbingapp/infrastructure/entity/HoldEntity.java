@@ -37,8 +37,8 @@ public class HoldEntity {
     @Column(name = "radius_ratio", nullable = false, precision = 5, scale = 4)
     private BigDecimal radiusRatio;
 
-    @Column(name = "sequence_order")
-    private Integer sequenceOrder;
+    @Column(name = "color")
+    private Integer color;
 
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate;
