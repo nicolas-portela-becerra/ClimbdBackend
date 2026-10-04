@@ -3,12 +3,14 @@ package com.climbingapp.api.controller;
 import com.climbingapp.api.dto.BoulderDetailDto;
 import com.climbingapp.api.dto.BoulderDto;
 import com.climbingapp.api.dto.BoulderPageResponse;
+import com.climbingapp.api.dto.BoulderWithUserPageResponse;
 import com.climbingapp.api.dto.CreateBoulderRequest;
 import com.climbingapp.api.dto.CreateHoldRequest;
 import com.climbingapp.api.dto.UpdateBoulderRequest;
 import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
+import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
 import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.UserRepository;
@@ -47,13 +49,13 @@ public class BoulderController implements BouldersApi {
     }
 
     @Override
-    public ResponseEntity<BoulderPageResponse> listBouldersByWall(
+    public ResponseEntity<BoulderWithUserPageResponse> listBouldersByWall(
             @PathVariable("wallImageId") Integer wallImageId, Integer page, Integer size) {
         if (wallImageUseCase.getWallImageById(wallImageId) == null) {
             throw new NotFoundException("Wall image with id " + wallImageId + " does not exist.");
         }
         return ResponseEntity.ok(
-                mapper.toBoulderPage(
+                mapper.toBoulderWithUserPage(
                         boulderUseCase.getBouldersByWallImage(
                                 wallImageId, PageRequest.of(page, size))));
     }
@@ -77,7 +79,6 @@ public class BoulderController implements BouldersApi {
                         ? createBoulderRequest.getHolds()
                         : List.of();
         List<HoldDTO> holds = new ArrayList<>(requestHolds.size());
-        // TODO: hold order does not matter at all, remove the sequence property
         for (int i = 0; i < requestHolds.size(); i++) {
             HoldDTO hold = mapper.toDomainHold(requestHolds.get(i));
             if (hold.getColor() == null) {
@@ -95,11 +96,13 @@ public class BoulderController implements BouldersApi {
     public ResponseEntity<BoulderDetailDto> getBoulderById(
             @PathVariable("boulderId") Integer boulderId) {
         BoulderDTO boulder = boulderUseCase.getBoulderById(boulderId);
+        UserDTO creator = userRepository.findById(boulder.getCreatorId());
         if (boulder == null) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(
-                mapper.toBoulderDetail(boulder, boulderUseCase.getBoulderHolds(boulderId)));
+                mapper.toBoulderDetail(
+                        boulder, boulderUseCase.getBoulderHolds(boulderId), creator));
     }
 
     @Override

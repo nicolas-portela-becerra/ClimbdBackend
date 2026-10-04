@@ -3,6 +3,7 @@ package com.climbingapp.api.mapper;
 import com.climbingapp.api.dto.BoulderDetailDto;
 import com.climbingapp.api.dto.BoulderDto;
 import com.climbingapp.api.dto.BoulderPageResponse;
+import com.climbingapp.api.dto.BoulderWithUserPageResponse;
 import com.climbingapp.api.dto.CreateHoldRequest;
 import com.climbingapp.api.dto.GymDto;
 import com.climbingapp.api.dto.GymPageResponse;
@@ -12,6 +13,7 @@ import com.climbingapp.api.dto.WallImageDetail;
 import com.climbingapp.api.dto.WallImagePageResponse;
 import com.climbingapp.api.dto.WallImageSummary;
 import com.climbingapp.domain.dto.BoulderDTO;
+import com.climbingapp.domain.dto.BoulderResponseDTO;
 import com.climbingapp.domain.dto.GymDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
@@ -42,9 +44,13 @@ public interface ApiDtoMapper {
 
     BoulderPageResponse toBoulderPage(Page<BoulderDTO> page);
 
+    BoulderWithUserPageResponse toBoulderWithUserPage(Page<BoulderResponseDTO> page);
+
     @Mapping(target = "id", source = "boulder.id")
     @Mapping(target = "holds", source = "holds")
-    BoulderDetailDto toBoulderDetail(BoulderDTO boulder, List<HoldDTO> holds);
+    @Mapping(target = "creator", source = "creator.name")
+    @Mapping(target = "name", source = "boulder.name")
+    BoulderDetailDto toBoulderDetail(BoulderDTO boulder, List<HoldDTO> holds, UserDTO creator);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "boulderId", ignore = true)

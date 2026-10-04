@@ -1,6 +1,7 @@
 package com.climbingapp.domain.usecase;
 
 import com.climbingapp.domain.dto.BoulderDTO;
+import com.climbingapp.domain.dto.BoulderResponseDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 
 import org.springframework.data.domain.Page;
@@ -18,7 +19,7 @@ public interface BoulderUseCase {
 
     Page<BoulderDTO> getAllBoulders(int gymId, Pageable pageable);
 
-    Page<BoulderDTO> getBouldersByWallImage(int wallImageId, Pageable pageable);
+    Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable);
 
     BoulderDTO updateBoulder(BoulderDTO boulderDTO);
 
