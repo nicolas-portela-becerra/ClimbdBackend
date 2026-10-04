@@ -340,6 +340,25 @@ paths:
           description: Gym not found
       security:
         - bearerAuth: []
+    delete:
+      operationId: deleteGym
+      tags: [Gyms]
+      summary: Delete gym (admin)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Gym deleted
+        '403':
+          description: Forbidden
+        '404':
+          description: Gym not found
+      security:
+        - bearerAuth: []
   /api/gyms/{gymId}/owners:
     post:
       operationId: assignGymOwner

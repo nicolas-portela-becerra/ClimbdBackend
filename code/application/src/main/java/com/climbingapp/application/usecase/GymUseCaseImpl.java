@@ -97,6 +97,16 @@ public class GymUseCaseImpl implements GymUseCase {
         }
     }
 
+    @Override
+    public void deleteGymById(int id) {
+        try {
+            gymRepository.deleteById(id);
+        } catch (Exception e) {
+            log.error("Error deleting gym by id: {}", e.getMessage());
+            throw e;
+        }
+    }
+
     private GymOwnerDTO buildGymOwner(int gymId, int userId, int assigneeId) {
         GymOwnerDTO gymOwnerDTO = new GymOwnerDTO();
         gymOwnerDTO.setGymId(gymId);

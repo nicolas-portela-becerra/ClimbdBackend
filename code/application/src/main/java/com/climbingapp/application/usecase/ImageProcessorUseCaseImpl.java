@@ -2,7 +2,6 @@ package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.sksamuel.scrimage.ImmutableImage;
-import com.sksamuel.scrimage.Position;
 import com.sksamuel.scrimage.ScaleMethod;
 import com.sksamuel.scrimage.metadata.ImageMetadata;
 import com.sksamuel.scrimage.metadata.Tag;
