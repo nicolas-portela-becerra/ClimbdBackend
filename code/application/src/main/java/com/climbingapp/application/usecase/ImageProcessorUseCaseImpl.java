@@ -77,9 +77,8 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
     @Override
     public byte[] resize(byte[] imageData, int width, int height) {
         ImmutableImage source = readBytes(imageData);
-        ImmutableImage resized = source.fit(1200, 300);
-        ImmutableImage compressedSource = resized.scale(0.8, ScaleMethod.Bicubic);
-        ImageWriter writer = new JpegWriter(90, true);
+        ImmutableImage compressedSource = source.fit(1200, 320, Color.LIGHT_GRAY);
+        ImageWriter writer = new JpegWriter(80, true);
         byte[] processedImage = null;
         try {
             processedImage = compressedSource.bytes(writer);
