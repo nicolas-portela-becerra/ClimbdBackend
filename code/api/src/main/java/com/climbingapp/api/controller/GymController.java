@@ -47,7 +47,7 @@ public class GymController implements GymsApi {
 
     @Override
     public ResponseEntity<Void> deleteGym(Integer gymId) {
-        try  {
+        try {
             gymUseCase.deleteGymById(gymId);
             return ResponseEntity.ok().build();
         } catch (Exception ex) {
