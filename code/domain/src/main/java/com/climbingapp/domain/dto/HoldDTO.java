@@ -22,7 +22,7 @@ public class HoldDTO {
 
     private BigDecimal radiusRatio;
 
-    private Integer sequenceOrder;
+    private Integer color;
 
     private LocalDateTime createdDate;
 

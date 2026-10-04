@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -61,14 +62,28 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
         }
         ImmutableImage source = readBytes(imageData);
         double scale = Math.min(1.0, (double) width / source.width);
-        ImmutableImage compressedSource = source.scale(scale, ScaleMethod.FastScale);
+        ImmutableImage compressedSource = source.scale(scale, ScaleMethod.Bicubic);
 
-        ImageWriter writer = new JpegWriter(50, true);
+        ImageWriter writer = new JpegWriter(70, true);
         byte[] processedImage = null;
         try {
             processedImage = compressedSource.bytes(writer);
         } catch (IOException e) {
-            throw new RuntimeException("Error while compressing image", e);
+            throw new RuntimeException("Error while creating thumbnail", e);
+        }
+        return processedImage;
+    }
+
+    @Override
+    public byte[] resize(byte[] imageData, int width, int height) {
+        ImmutableImage source = readBytes(imageData);
+        ImmutableImage compressedSource = source.fit(1200, 320, Color.LIGHT_GRAY);
+        ImageWriter writer = new JpegWriter(80, true);
+        byte[] processedImage = null;
+        try {
+            processedImage = compressedSource.bytes(writer);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while resizing image", e);
         }
         return processedImage;
     }

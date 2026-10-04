@@ -16,4 +16,6 @@ public interface GymUseCase {
     GymDTO updateGym(GymDTO gymDTO);
 
     void assignGymOwner(int gymId, int userId, int assigneeId);
+
+    void deleteGymById(int id);
 }
