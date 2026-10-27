@@ -25,7 +25,7 @@ public class HoldRepositoryImpl implements HoldRepository {
 
     @Override
     public List<HoldDTO> findByBoulderIdOrderBySequenceOrder(Integer boulderId) {
-        return mapper.toDtoList(jpaRepository.findByBoulderIdOrderBySequenceOrder(boulderId));
+        return mapper.toDtoList(jpaRepository.findByBoulderId(boulderId));
     }
 
     @Override

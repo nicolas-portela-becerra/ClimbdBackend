@@ -5,4 +5,6 @@ public interface ImageProcessorUseCase {
     byte[] compress(byte[] imageData, int maxPx);
 
     byte[] createThumbnail(byte[] imageData, int width);
+
+    byte[] resize(byte[] imageData, int width, int height);
 }

@@ -14,6 +14,8 @@ public class GymDTO {
 
     @EqualsAndHashCode.Exclude private Integer id;
 
+    @EqualsAndHashCode.Exclude private byte[] logo;
+
     private String name;
 
     private String location;

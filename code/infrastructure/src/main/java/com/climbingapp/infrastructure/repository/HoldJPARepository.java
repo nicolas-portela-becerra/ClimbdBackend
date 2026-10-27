@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface HoldJPARepository extends JpaRepository<HoldEntity, Integer> {
 
-    List<HoldEntity> findByBoulderIdOrderBySequenceOrder(Integer boulderId);
+    List<HoldEntity> findByBoulderId(Integer boulderId);
 
     void deleteByBoulderId(Integer boulderId);
 }

@@ -340,6 +340,25 @@ paths:
           description: Gym not found
       security:
         - bearerAuth: []
+    delete:
+      operationId: deleteGym
+      tags: [Gyms]
+      summary: Delete gym (admin)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Gym deleted
+        '403':
+          description: Forbidden
+        '404':
+          description: Gym not found
+      security:
+        - bearerAuth: []
   /api/gyms/{gymId}/owners:
     post:
       operationId: assignGymOwner
@@ -581,7 +600,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BoulderPageResponse'
+                $ref: '#/components/schemas/BoulderWithUserPageResponse'
       security:
         - bearerAuth: []
   /api/boulders/{boulderId}:
@@ -739,6 +758,10 @@ components:
       properties:
         id:
           type: integer
+        logo:
+          type: string
+          format: byte
+          nullable: true
         name:
           type: string
         location:
@@ -769,6 +792,10 @@ components:
           type: string
         createdBy:
           type: integer
+        logo:
+          type: string
+          format: byte
+          nullable: true
     UpdateGymRequest:
       type: object
       properties:
@@ -860,8 +887,6 @@ components:
         description:
           type: string
           nullable: true
-        wallActual:
-          type: boolean
         createdDate:
           type: string
           format: date-time
@@ -869,9 +894,27 @@ components:
           type: string
           format: date-time
           nullable: true
+    BoulderResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        gymId:
+          type: integer
+        wallImageId:
+          type: integer
+        creator:
+          type: string
+        name:
+          type: string
+        grade:
+          type: string
+        description:
+          type: string
+          nullable: true
     BoulderDetailDto:
       allOf:
-        - $ref: '#/components/schemas/BoulderDto'
+        - $ref: '#/components/schemas/BoulderResponseDto'
         - type: object
           properties:
             holds:
@@ -935,7 +978,7 @@ components:
           format: float
           minimum: 0
           maximum: 1
-        sequenceOrder:
+        color:
           type: integer
     HoldDto:
       type: object
@@ -953,7 +996,7 @@ components:
         radiusRatio:
           type: number
           format: float
-        sequenceOrder:
+        color:
           type: integer
           nullable: true
     PageResponse:
@@ -994,6 +1037,15 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/WallImageSummary'
+    BoulderWithUserPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageResponse'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/BoulderResponseDto'
     BoulderPageResponse:
       allOf:
         - $ref: '#/components/schemas/PageResponse'

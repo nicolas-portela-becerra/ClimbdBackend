@@ -7,6 +7,7 @@ import com.sksamuel.scrimage.metadata.ImageMetadata;
 import com.sksamuel.scrimage.metadata.Tag;
 import com.sksamuel.scrimage.nio.ImageWriter;
 import com.sksamuel.scrimage.nio.JpegWriter;
+import com.sksamuel.scrimage.nio.PngWriter;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,14 +62,30 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
         }
         ImmutableImage source = readBytes(imageData);
         double scale = Math.min(1.0, (double) width / source.width);
-        ImmutableImage compressedSource = source.scale(scale, ScaleMethod.FastScale);
+        ImmutableImage compressedSource = source.scale(scale, ScaleMethod.Bicubic);
 
-        ImageWriter writer = new JpegWriter(50, true);
+        ImageWriter writer = new JpegWriter(70, true);
         byte[] processedImage = null;
         try {
             processedImage = compressedSource.bytes(writer);
         } catch (IOException e) {
-            throw new RuntimeException("Error while compressing image", e);
+            throw new RuntimeException("Error while creating thumbnail", e);
+        }
+        return processedImage;
+    }
+
+    @Override
+    public byte[] resize(byte[] imageData, int width, int height) {
+        ImmutableImage source = readBytes(imageData);
+        ImmutableImage resized = source.bound(width, height);
+        ImageWriter writer =
+                resized.hasAlpha() ? PngWriter.MaxCompression : new JpegWriter(80, true);
+
+        byte[] processedImage = null;
+        try {
+            processedImage = resized.bytes(writer);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while resizing image", e);
         }
         return processedImage;
     }

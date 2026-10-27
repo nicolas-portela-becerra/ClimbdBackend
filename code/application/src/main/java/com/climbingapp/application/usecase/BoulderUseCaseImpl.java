@@ -1,15 +1,20 @@
 package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.dto.BoulderDTO;
+import com.climbingapp.domain.dto.BoulderResponseDTO;
 import com.climbingapp.domain.dto.HoldDTO;
+import com.climbingapp.domain.dto.UserDTO;
+import com.climbingapp.domain.mapper.BoulderMapper;
 import com.climbingapp.domain.repository.BoulderRepository;
 import com.climbingapp.domain.repository.HoldRepository;
+import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.BoulderUseCase;
 
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +29,10 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     @Autowired private BoulderRepository boulderRepository;
 
     @Autowired private HoldRepository holdRepository;
+
+    @Autowired private UserRepository userRepository;
+
+    @Autowired private BoulderMapper boulderMapper;
 
     @Override
     @Transactional
@@ -68,9 +77,11 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     @Override
-    public Page<BoulderDTO> getBouldersByWallImage(int wallImageId, Pageable pageable) {
+    public Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable) {
         try {
-            return boulderRepository.findByWallImageId(wallImageId, pageable);
+            Page<BoulderDTO> page = boulderRepository.findByWallImageId(wallImageId, pageable);
+            List<BoulderResponseDTO> boulderResponseDTOList = addCreatorToBoulder(page);
+            return new PageImpl<>(boulderResponseDTOList, pageable, page.getTotalElements());
         } catch (Exception e) {
             log.error(
                     "Error retrieving boulders for wall image with id {}: {}",
@@ -111,5 +122,15 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
             log.error("Error deleting boulder with id {}: {}", id, e.getMessage());
             throw e;
         }
+    }
+
+    private List<BoulderResponseDTO> addCreatorToBoulder(Page<BoulderDTO> boulders) {
+        return boulders.getContent().stream()
+                .map(
+                        boulder -> {
+                            UserDTO creator = userRepository.findById(boulder.getCreatorId());
+                            return boulderMapper.toResponseDTO(boulder, creator);
+                        })
+                .toList();
     }
 }

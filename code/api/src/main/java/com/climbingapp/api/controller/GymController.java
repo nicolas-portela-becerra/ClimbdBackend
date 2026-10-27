@@ -46,6 +46,16 @@ public class GymController implements GymsApi {
     }
 
     @Override
+    public ResponseEntity<Void> deleteGym(Integer gymId) {
+        try {
+            gymUseCase.deleteGymById(gymId);
+            return ResponseEntity.ok().build();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Override
     @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     public ResponseEntity<GymDto> getGymById(@PathVariable("gymId") Integer gymId) {
         GymDTO gym = gymUseCase.getGymById(gymId);
@@ -85,6 +95,7 @@ public class GymController implements GymsApi {
         gym.setDescription(createGymRequest.getDescription());
         gym.setCreatorId(createGymRequest.getCreatedBy());
         gym.setCreatedDate(LocalDateTime.now());
+        gym.setLogo(createGymRequest.getLogo());
         return gym;
     }
 
