@@ -7,13 +7,12 @@ import com.sksamuel.scrimage.metadata.ImageMetadata;
 import com.sksamuel.scrimage.metadata.Tag;
 import com.sksamuel.scrimage.nio.ImageWriter;
 import com.sksamuel.scrimage.nio.JpegWriter;
-
 import com.sksamuel.scrimage.nio.PngWriter;
+
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -79,7 +78,8 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
     public byte[] resize(byte[] imageData, int width, int height) {
         ImmutableImage source = readBytes(imageData);
         ImmutableImage resized = source.bound(width, height);
-        ImageWriter writer = resized.hasAlpha() ? PngWriter.MaxCompression : new JpegWriter(80, true);
+        ImageWriter writer =
+                resized.hasAlpha() ? PngWriter.MaxCompression : new JpegWriter(80, true);
 
         byte[] processedImage = null;
         try {
