@@ -34,7 +34,7 @@ public class GymUseCaseImpl implements GymUseCase {
     public GymDTO createGym(GymDTO gymDTO) {
         try {
             if (gymDTO.getLogo() != null) {
-                gymDTO.setLogo(imageProcessorUseCase.resize(gymDTO.getLogo(), 1200, 320));
+                gymDTO.setLogo(imageProcessorUseCase.resize(gymDTO.getLogo(), 512, 512));
             }
             return gymRepository.save(gymDTO);
         } catch (Exception e) {
