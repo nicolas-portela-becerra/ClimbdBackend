@@ -32,15 +32,15 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED);
     }
 
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseStatus(HttpStatus.LOCKED)
     @ExceptionHandler({DisabledException.class})
     public ResponseEntity<ErrorResponse> handleDisabledException() {
         log.warn("Authentication attempt on a deactivated account");
         return new ResponseEntity<>(
                 new ErrorResponse()
                         .message("User account is deactivated")
-                        .status(HttpStatus.UNAUTHORIZED.value()),
-                HttpStatus.UNAUTHORIZED);
+                        .status(HttpStatus.LOCKED.value()),
+                HttpStatus.LOCKED);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
