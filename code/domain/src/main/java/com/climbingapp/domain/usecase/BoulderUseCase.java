@@ -21,7 +21,7 @@ public interface BoulderUseCase {
 
     Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable);
 
-    BoulderDTO updateBoulder(BoulderDTO boulderDTO);
+    BoulderDTO updateBoulder(BoulderDTO boulderDTO, List<HoldDTO> holds);
 
     void deleteBoulder(int id);
 }
