@@ -12,4 +12,6 @@ public interface WallImageRepository {
     Page<WallImageDTO> findByGymId(Integer gymId, Pageable pageable);
 
     WallImageDTO save(WallImageDTO wallImage);
+
+    void deleteById(Integer id);
 }

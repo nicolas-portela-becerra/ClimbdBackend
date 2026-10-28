@@ -1,6 +1,10 @@
 package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.dto.WallImageDTO;
+import com.climbingapp.domain.dto.BoulderDTO;
+import com.climbingapp.domain.exception.NotFoundException;
+import com.climbingapp.domain.repository.BoulderRepository;
+import com.climbingapp.domain.repository.HoldRepository;
 import com.climbingapp.domain.repository.WallImageRepository;
 import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.climbingapp.domain.usecase.WallImageUseCase;
@@ -11,12 +15,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
 public class WallImageUseCaseImpl implements WallImageUseCase {
 
     @Autowired private WallImageRepository wallImageRepository;
+
+    @Autowired private BoulderRepository boulderRepository;
+
+    @Autowired private HoldRepository holdRepository;
 
     @Autowired private ImageProcessorUseCase imageProcessorUseCase;
 
@@ -36,6 +48,34 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
             log.error("Error uploading wall image: {}", e.getMessage());
             throw new RuntimeException("Failed to upload wall image", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public WallImageDTO updateWallImage(Integer id, String wallName, byte[] newImageData) {
+        WallImageDTO wallImage = wallImageRepository.findById(id);
+        if (wallImage == null) {
+            throw new NotFoundException("Wall image with id " + id + " does not exist.");
+        }
+        wallImage.setWallName(wallName);
+        if (newImageData != null) {
+            wallImage.setImageData(imageProcessorUseCase.compress(newImageData, 1920));
+            wallImage.setThumbnail(
+                    imageProcessorUseCase.createThumbnail(wallImage.getImageData(), 300));
+            wallImage.setMimeType("image/jpeg");
+            wallImage.setUploadedDate(LocalDateTime.now());
+        }
+        return wallImageRepository.save(wallImage);
+    }
+
+    @Override
+    @Transactional
+    public void deleteWallImage(Integer id) {
+        List<BoulderDTO> boulders = boulderRepository.findByWallImageId(id);
+        holdRepository.deleteByBoulderId(boulders.getFirst().getId());
+        boulderRepository.deleteById(boulders.getFirst().getId());
+        wallImageRepository.deleteById(id);
+        log.info("Wall image with id {} deleted successfully", id);
     }
 
     @Override
