@@ -9,6 +9,10 @@ public interface WallImageUseCase {
 
     WallImageDTO uploadWallImage(WallImageDTO wallImageDTO);
 
+    WallImageDTO updateWallImage(Integer id, String wallName, byte[] newImageData);
+
+    void deleteWallImage(Integer id);
+
     WallImageDTO getWallImageById(Integer id);
 
     byte[] getWallImageData(Integer id);

@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public class BoulderRepositoryImpl implements BoulderRepository {
 
@@ -31,6 +33,11 @@ public class BoulderRepositoryImpl implements BoulderRepository {
     @Override
     public Page<BoulderDTO> findByWallImageId(Integer wallImageId, Pageable pageable) {
         return jpaRepository.findByWallImageId(wallImageId, pageable).map(mapper::toDto);
+    }
+
+    @Override
+    public List<BoulderDTO> findByWallImageId(Integer wallImageId) {
+        return jpaRepository.findByWallImageId(wallImageId).stream().map(mapper::toDto).toList();
     }
 
     @Override

@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -102,17 +103,49 @@ public class WallImageController implements WallImagesApi {
         return imageResponse(wallImage.getThumbnail(), MediaType.IMAGE_JPEG_VALUE);
     }
 
+    @Override
+    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    public ResponseEntity<Void> updateWallImage(
+            @PathVariable("wallImageId") Integer wallImageId,
+            Integer gymId,
+            String wallName,
+            MultipartFile image) {
+        if (!existsInGym(wallImageId, gymId)) {
+            return ResponseEntity.notFound().build();
+        }
+        boolean hasImage = image != null && !image.isEmpty();
+        if (hasImage) {
+            validateImage(image);
+        }
+        wallImageUseCase.updateWallImage(
+                wallImageId, wallName.trim(), hasImage ? readBytes(image) : null);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    public ResponseEntity<Void> deleteWallImage(
+            @PathVariable("wallImageId") Integer wallImageId, Integer gymId) {
+        if (!existsInGym(wallImageId, gymId)) {
+            return ResponseEntity.notFound().build();
+        }
+        wallImageUseCase.deleteWallImage(wallImageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    private boolean existsInGym(Integer wallImageId, Integer gymId) {
+        WallImageDTO wallImage = wallImageUseCase.getWallImageById(wallImageId);
+        return ObjectUtils.nullSafeEquals(wallImage.getGymId(), gymId);
+    }
+
     private WallImageDTO buildImage(
             Integer gymId, MultipartFile image, String wallName, Integer uploadedBy) {
         WallImageDTO wallImage = new WallImageDTO();
         wallImage.setGymId(gymId);
         wallImage.setWallName(wallName.trim());
         wallImage.setImageData(readBytes(image));
-        wallImage.setThumbnail(
-                new byte[0]); // placeholder — the usecase generates the real thumbnail
-        wallImage.setMimeType(
-                image.getContentType()); // overwritten to image/jpeg by the usecase after
-        // compression
+        wallImage.setThumbnail(new byte[0]);
+        wallImage.setMimeType(image.getContentType());
         wallImage.setUploadedBy(uploadedBy);
         wallImage.setUploadedDate(LocalDateTime.now());
         return wallImage;

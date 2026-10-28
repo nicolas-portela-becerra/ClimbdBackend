@@ -33,4 +33,9 @@ public class WallImageRepositoryImpl implements WallImageRepository {
         WallImageEntity entity = mapper.toEntity(wallImage);
         return mapper.toDto(jpaRepository.save(entity));
     }
+
+    @Override
+    public void deleteById(Integer id) {
+        jpaRepository.deleteById(id);
+    }
 }

@@ -5,6 +5,8 @@ import com.climbingapp.domain.dto.BoulderDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface BoulderRepository {
 
     BoulderDTO findById(Integer id);
@@ -12,6 +14,8 @@ public interface BoulderRepository {
     Page<BoulderDTO> findByGymId(Integer gymId, Pageable pageable);
 
     Page<BoulderDTO> findByWallImageId(Integer wallImageId, Pageable pageable);
+
+    List<BoulderDTO> findByWallImageId(Integer wallImageId);
 
     BoulderDTO save(BoulderDTO boulder);
 
