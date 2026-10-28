@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -92,18 +93,24 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     @Override
-    public BoulderDTO updateBoulder(BoulderDTO boulderDTO) {
+    @Transactional
+    public BoulderDTO updateBoulder(BoulderDTO boulderDTO, List<HoldDTO> holds) {
         try {
             BoulderDTO currentBoulder = boulderRepository.findById(boulderDTO.getId());
             BoulderDTO updatedBoulder = null;
-            if (currentBoulder != null && !currentBoulder.equals(boulderDTO)) {
-                boulderDTO.setUpdatedDate(LocalDateTime.now());
-                currentBoulder.setDescription(boulderDTO.getDescription());
-                currentBoulder.setGrade(boulderDTO.getGrade());
-                currentBoulder.setGymId(boulderDTO.getGymId());
-                updatedBoulder = boulderRepository.save(currentBoulder);
-            } else if (currentBoulder != null && currentBoulder.equals(boulderDTO)) {
+            List<HoldDTO> currentHolds =
+                    holdRepository.findByBoulderIdOrderBySequenceOrder(boulderDTO.getId());
+
+            if (!ObjectUtils.nullSafeEquals(currentBoulder, boulderDTO)) {
+                updatedBoulder = updateBoulderDto(boulderDTO, currentBoulder);
+                log.debug("Boulder {} updated", currentBoulder.getId());
+            } else if (!ObjectUtils.isEmpty(currentHolds) && holds.size() != currentHolds.size()) {
+                updateHoldsDto(holds, currentHolds);
+                updatedBoulder = currentBoulder;
+                log.debug("Holds updated for boulder: {}", currentBoulder.getId());
+            } else {
                 updatedBoulder = new BoulderDTO();
+                log.info("Nothing to update in the boulder: {}", boulderDTO);
             }
             return updatedBoulder;
         } catch (Exception e) {
@@ -112,10 +119,31 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
         }
     }
 
+    private void updateHoldsDto(List<HoldDTO> holds, List<HoldDTO> currentHolds) {
+        if (holds != null && !holds.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            holds.forEach(
+                    hold -> {
+                        hold.setUpdatedDate(now);
+                    });
+            holdRepository.deleteByBoulderId(currentHolds.getFirst().getBoulderId());
+            holdRepository.saveAll(holds);
+        }
+    }
+
+    private BoulderDTO updateBoulderDto(BoulderDTO newBoulder, BoulderDTO currentBoulder) {
+        currentBoulder.setName(newBoulder.getName());
+        currentBoulder.setDescription(newBoulder.getDescription());
+        currentBoulder.setGrade(newBoulder.getGrade());
+        currentBoulder.setUpdatedDate(LocalDateTime.now());
+        return boulderRepository.save(currentBoulder);
+    }
+
     @Override
     @Transactional
     public void deleteBoulder(int id) {
         try {
+            holdRepository.deleteByBoulderId(id);
             boulderRepository.deleteById(id);
             log.info("Boulder with id {} deleted successfully", id);
         } catch (Exception e) {

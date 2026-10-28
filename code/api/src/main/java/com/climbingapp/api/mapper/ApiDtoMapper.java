@@ -19,8 +19,10 @@ import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
 
+import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
@@ -56,12 +58,17 @@ public interface ApiDtoMapper {
     @Mapping(target = "boulderId", ignore = true)
     @Mapping(target = "createdDate", ignore = true)
     @Mapping(target = "updatedDate", ignore = true)
-    @Mapping(target = "XRatio", source = "xRatio")
-    @Mapping(target = "YRatio", source = "yRatio")
     HoldDTO toDomainHold(CreateHoldRequest request);
 
-    @Mapping(target = "xRatio", source = "XRatio")
-    @Mapping(target = "yRatio", source = "YRatio")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdDate", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "updatedDate", expression = "java(java.time.LocalDateTime.now())")
+    @Named("toDomainHoldDTO")
+    HoldDTO toDomainHoldDTO(HoldDto holdDto);
+
+    @IterableMapping(qualifiedByName = "toDomainHoldDTO")
+    List<HoldDTO> toDomainHoldDTOs(List<HoldDto> holds);
+
     HoldDto toApiHold(HoldDTO dto);
 
     WallImagePageResponse toWallImagePage(Page<WallImageDTO> page);
