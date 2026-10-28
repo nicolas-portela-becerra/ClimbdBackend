@@ -111,7 +111,10 @@ public class BoulderController implements BouldersApi {
             @PathVariable("boulderId") Integer boulderId,
             UpdateBoulderRequest updateBoulderRequest) {
         BoulderDTO boulderDto = buildBoulder(boulderId, updateBoulderRequest);
-        BoulderDTO updatedBoulder = boulderUseCase.updateBoulder(boulderDto);
+        List<HoldDTO> holds =
+                new ArrayList<>(mapper.toDomainHoldDTOs(updateBoulderRequest.getHolds()));
+        BoulderDTO updatedBoulder = boulderUseCase.updateBoulder(boulderDto, holds);
+
         if (updatedBoulder == null) {
             return ResponseEntity.notFound().build();
         } else {
@@ -147,6 +150,11 @@ public class BoulderController implements BouldersApi {
         boulder.setDescription(updateBoulderRequest.getDescription());
         boulder.setName(updateBoulderRequest.getName());
         boulder.setGrade(updateBoulderRequest.getGrade());
+        boulder.setCreatorId(updateBoulderRequest.getCreatorId());
+        boulder.setWallImageId(updateBoulderRequest.getWallImageId());
+        boulder.setGymId(updateBoulderRequest.getGymId());
+        boulder.setCreatedDate(LocalDateTime.now());
+        boulder.setUpdatedDate(LocalDateTime.now());
         return boulder;
     }
 }

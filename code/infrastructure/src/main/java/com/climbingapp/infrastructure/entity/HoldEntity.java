@@ -28,11 +28,11 @@ public class HoldEntity {
     @Column(name = "boulder_id", nullable = false)
     private Integer boulderId;
 
-    @Column(name = "x_ratio", nullable = false, precision = 5, scale = 4)
-    private BigDecimal xRatio;
+    @Column(name = "coord_x", nullable = false, precision = 5, scale = 4)
+    private BigDecimal coordX;
 
-    @Column(name = "y_ratio", nullable = false, precision = 5, scale = 4)
-    private BigDecimal yRatio;
+    @Column(name = "coord_y", nullable = false, precision = 5, scale = 4)
+    private BigDecimal coordY;
 
     @Column(name = "radius_ratio", nullable = false, precision = 5, scale = 4)
     private BigDecimal radiusRatio;

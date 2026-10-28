@@ -16,9 +16,9 @@ public class HoldDTO {
 
     private Integer boulderId;
 
-    private BigDecimal xRatio;
+    private BigDecimal coordX;
 
-    private BigDecimal yRatio;
+    private BigDecimal coordY;
 
     private BigDecimal radiusRatio;
 
