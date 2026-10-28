@@ -144,10 +144,8 @@ public class WallImageController implements WallImagesApi {
         wallImage.setGymId(gymId);
         wallImage.setWallName(wallName.trim());
         wallImage.setImageData(readBytes(image));
-        wallImage.setThumbnail(
-                new byte[0]);
-        wallImage.setMimeType(
-                image.getContentType());
+        wallImage.setThumbnail(new byte[0]);
+        wallImage.setMimeType(image.getContentType());
         wallImage.setUploadedBy(uploadedBy);
         wallImage.setUploadedDate(LocalDateTime.now());
         return wallImage;

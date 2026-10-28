@@ -1,7 +1,7 @@
 package com.climbingapp.application.usecase;
 
-import com.climbingapp.domain.dto.WallImageDTO;
 import com.climbingapp.domain.dto.BoulderDTO;
+import com.climbingapp.domain.dto.WallImageDTO;
 import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.BoulderRepository;
 import com.climbingapp.domain.repository.HoldRepository;
@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -72,8 +73,12 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
     @Transactional
     public void deleteWallImage(Integer id) {
         List<BoulderDTO> boulders = boulderRepository.findByWallImageId(id);
-        holdRepository.deleteByBoulderId(boulders.getFirst().getId());
-        boulderRepository.deleteById(boulders.getFirst().getId());
+        if (!ObjectUtils.isEmpty(boulders)){
+            holdRepository.deleteByBoulderId(boulders.getFirst().getId());
+            boulderRepository.deleteById(boulders.getFirst().getId());
+        } else {
+            log.info("No boulders to delete in the wall {}", id);
+        }
         wallImageRepository.deleteById(id);
         log.info("Wall image with id {} deleted successfully", id);
     }
