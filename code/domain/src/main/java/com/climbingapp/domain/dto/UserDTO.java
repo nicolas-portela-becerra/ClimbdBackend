@@ -1,5 +1,7 @@
 package com.climbingapp.domain.dto;
 
+import com.climbingapp.infrastructure.entity.enums.Gender;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,4 +30,6 @@ public class UserDTO {
     private LocalDateTime createdDate;
 
     private LocalDateTime updatedDate;
+
+    private Gender gender;
 }

@@ -71,7 +71,8 @@ class UserUseCaseImplTest {
                         null,
                         true,
                         LocalDateTime.now(),
-                        null); // 8 args — no hash
+                        null,
+                        null); // no hash
         when(userRepository.findByEmail("user@test.com")).thenReturn(existing);
 
         assertThrows(

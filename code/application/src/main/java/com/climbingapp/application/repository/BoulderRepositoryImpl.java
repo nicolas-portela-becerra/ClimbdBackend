@@ -41,6 +41,16 @@ public class BoulderRepositoryImpl implements BoulderRepository {
     }
 
     @Override
+    public List<BoulderDTO> findByCompetitionId(Integer competitionId) {
+        return mapper.toDtoList(jpaRepository.findByCompetitionId(competitionId));
+    }
+
+    @Override
+    public Page<BoulderDTO> findByGymIdWithoutCompetition(Integer gymId, Pageable pageable) {
+        return jpaRepository.findByGymIdAndCompetitionIdIsNull(gymId, pageable).map(mapper::toDto);
+    }
+
+    @Override
     public BoulderDTO save(BoulderDTO boulder) {
         BoulderEntity entity = mapper.toEntity(boulder);
         return mapper.toDto(jpaRepository.save(entity));

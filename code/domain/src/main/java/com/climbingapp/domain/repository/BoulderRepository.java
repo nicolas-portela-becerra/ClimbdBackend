@@ -17,6 +17,10 @@ public interface BoulderRepository {
 
     List<BoulderDTO> findByWallImageId(Integer wallImageId);
 
+    List<BoulderDTO> findByCompetitionId(Integer competitionId);
+
+    Page<BoulderDTO> findByGymIdWithoutCompetition(Integer gymId, Pageable pageable);
+
     BoulderDTO save(BoulderDTO boulder);
 
     void deleteById(Integer id);

@@ -83,6 +83,7 @@ class AuthControllerTest {
                         null,
                         true,
                         LocalDateTime.now(),
+                        null,
                         null);
     }
 
