@@ -19,6 +19,8 @@ public interface BoulderUseCase {
 
     Page<BoulderDTO> getAllBoulders(int gymId, Pageable pageable);
 
+    Page<BoulderDTO> getAllNonCompBoulders(int  gymId, Pageable pageable);
+
     Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable);
 
     BoulderDTO updateBoulder(BoulderDTO boulderDTO, List<HoldDTO> holds);

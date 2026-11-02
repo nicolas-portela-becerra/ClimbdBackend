@@ -32,14 +32,20 @@ public class CompetitionEntity {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "type", columnDefinition = "comp_type")
+    @Column(name = "type", nullable = false, columnDefinition = "comp_type")
     private CompetitionType type;
 
-    @Column(name = "max_points", nullable = false)
-    private Integer maxPoints;
+    @Column(name = "grace_minutes", nullable = false)
+    private Integer graceMinutes;
 
-    @Column(name = "max_attempts")
-    private Integer maxAttempts;
+    @Column(name = "base_points")
+    private Integer basePoints;
+
+    @Column(name = "penalty_per_attempt")
+    private Integer penaltyPerAttempt;
+
+    @Column(name = "min_points")
+    private Integer minPoints;
 
     @Column(name = "date_from", nullable = false)
     private LocalDateTime dateFrom;

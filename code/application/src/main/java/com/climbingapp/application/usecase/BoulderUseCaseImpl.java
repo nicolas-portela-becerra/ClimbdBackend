@@ -78,6 +78,16 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     @Override
+    public Page<BoulderDTO> getAllNonCompBoulders(int gymId, Pageable pageable) {
+        try {
+            return boulderRepository.findByGymIdWithoutCompetition(gymId, pageable);
+        } catch (Exception e) {
+            log.error("Error retrieving non comp boulders for gym with id {}: {}", gymId, e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable) {
         try {
             Page<BoulderDTO> page = boulderRepository.findByWallImageId(wallImageId, pageable);

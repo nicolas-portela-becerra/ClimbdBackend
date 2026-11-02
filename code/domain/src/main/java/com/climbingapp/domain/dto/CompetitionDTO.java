@@ -21,9 +21,13 @@ public class CompetitionDTO {
 
     private CompetitionType type;
 
-    private Integer maxPoints;
+    private Integer graceMinutes;
 
-    private Integer maxAttempts;
+    private Integer basePoints;
+
+    private Integer penaltyPerAttempt;
+
+    private Integer minPoints;
 
     private LocalDateTime dateFrom;
 

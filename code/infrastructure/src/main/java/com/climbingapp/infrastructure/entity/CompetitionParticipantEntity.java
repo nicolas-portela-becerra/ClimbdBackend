@@ -1,6 +1,7 @@
 package com.climbingapp.infrastructure.entity;
 
 import com.climbingapp.infrastructure.entity.enums.CompetitionSection;
+import com.climbingapp.infrastructure.entity.enums.Gender;
 
 import jakarta.persistence.*;
 
@@ -37,8 +38,16 @@ public class CompetitionParticipantEntity {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "section", columnDefinition = "comp_section")
+    @Column(name = "section", nullable = false, columnDefinition = "comp_section")
     private CompetitionSection section;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "gender", nullable = false, columnDefinition = "gender")
+    private Gender gender;
+
+    @Column(name = "last_snapshot", nullable = false)
+    private Long lastSnapshot;
 
     @Column(name = "registered_at", nullable = false)
     private LocalDateTime registeredAt;

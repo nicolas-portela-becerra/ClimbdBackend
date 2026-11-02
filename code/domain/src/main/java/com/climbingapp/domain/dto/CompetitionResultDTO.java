@@ -20,4 +20,6 @@ public class CompetitionResultDTO {
     private Integer attempts;
 
     private boolean topped;
+
+    private Integer points;
 }

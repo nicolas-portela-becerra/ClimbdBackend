@@ -28,9 +28,12 @@ public class CompetitionResultEntity {
     @Column(name = "competition_id", nullable = false)
     private Integer competitionId;
 
-    @Column(name = "attempts")
+    @Column(name = "attempts", nullable = false)
     private Integer attempts;
 
     @Column(name = "topped", nullable = false)
     private boolean topped;
+
+    @Column(name = "points", nullable = false)
+    private Integer points;
 }

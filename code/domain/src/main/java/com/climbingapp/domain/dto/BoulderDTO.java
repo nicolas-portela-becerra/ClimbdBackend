@@ -22,6 +22,8 @@ public class BoulderDTO {
 
     @EqualsAndHashCode.Exclude private Integer competitionId;
 
+    @EqualsAndHashCode.Exclude private Integer points;
+
     private String name;
 
     private String grade;

@@ -28,7 +28,7 @@ import org.springframework.data.domain.Page;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -87,7 +87,13 @@ public interface ApiDtoMapper {
     WallImageDetail toWallImageDetail(WallImageDTO dto);
 
     default OffsetDateTime toOffset(LocalDateTime dateTime) {
-        return dateTime == null ? null : dateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        return dateTime == null ? null : dateTime.atOffset(ZoneOffset.UTC);
+    }
+
+    default LocalDateTime toUtc(OffsetDateTime dateTime) {
+        return dateTime == null
+                ? null
+                : dateTime.withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
     }
 
     default BigDecimal toBigDecimal(Float value) {

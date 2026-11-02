@@ -1,6 +1,7 @@
 package com.climbingapp.domain.dto;
 
 import com.climbingapp.infrastructure.entity.enums.CompetitionSection;
+import com.climbingapp.infrastructure.entity.enums.Gender;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,10 @@ public class CompetitionParticipantDTO {
     private Integer competitionId;
 
     private CompetitionSection section;
+
+    private Gender gender;
+
+    private Long lastSnapshot;
 
     private LocalDateTime registeredAt;
 }

@@ -45,7 +45,7 @@ public class BoulderController implements BouldersApi {
             @PathVariable("gymId") Integer gymId, Integer page, Integer size) {
         return ResponseEntity.ok(
                 mapper.toBoulderPage(
-                        boulderUseCase.getAllBoulders(gymId, PageRequest.of(page, size))));
+                        boulderUseCase.getAllNonCompBoulders(gymId, PageRequest.of(page, size))));
     }
 
     @Override

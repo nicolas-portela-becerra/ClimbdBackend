@@ -36,6 +36,9 @@ public class BoulderEntity {
     @Column(name = "competition_id")
     private Integer competitionId;
 
+    @Column(name = "points")
+    private Integer points;
+
     @Column(name = "name", nullable = false)
     private String name;
 
