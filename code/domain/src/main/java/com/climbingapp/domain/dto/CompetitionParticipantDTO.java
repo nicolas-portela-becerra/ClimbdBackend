@@ -24,7 +24,7 @@ public class CompetitionParticipantDTO {
 
     private Gender gender;
 
-    private Long lastSnapshot;
+    private Integer lastSnapshot;
 
     private LocalDateTime registeredAt;
 }

@@ -10,6 +10,7 @@ import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.UserUseCase;
+import com.climbingapp.infrastructure.entity.enums.Gender;
 import com.climbingapp.jwt.utils.JwtUserDetailsService;
 import com.climbingapp.jwt.utils.RefreshTokenService;
 import com.climbingapp.jwt.utils.TokenManager;
@@ -71,7 +72,10 @@ public class AuthController implements AuthApi {
                 userUseCase.register(
                         registerRequest.getName(),
                         registerRequest.getEmail(),
-                        registerRequest.getPassword());
+                        registerRequest.getPassword(),
+                        registerRequest.getGender() != null
+                                ? Gender.valueOf(registerRequest.getGender().name())
+                                : null);
         UserCredentials credentials = userRepository.findCredentialsByEmail(savedUser.getEmail());
         UserDetails userDetails = buildUserDetails(credentials);
         String accessToken = tokenManager.generateAccessToken(userDetails);

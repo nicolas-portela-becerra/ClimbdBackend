@@ -51,6 +51,14 @@ public class BoulderRepositoryImpl implements BoulderRepository {
     }
 
     @Override
+    public Page<BoulderDTO> findByWallImageIdWithoutCompetition(
+            Integer wallImageId, Pageable pageable) {
+        return jpaRepository
+                .findByWallImageIdAndCompetitionIdIsNull(wallImageId, pageable)
+                .map(mapper::toDto);
+    }
+
+    @Override
     public BoulderDTO save(BoulderDTO boulder) {
         BoulderEntity entity = mapper.toEntity(boulder);
         return mapper.toDto(jpaRepository.save(entity));
@@ -64,5 +72,10 @@ public class BoulderRepositoryImpl implements BoulderRepository {
     @Override
     public boolean existsByIdAndCreatorId(Integer id, Integer creatorId) {
         return jpaRepository.existsByIdAndCreatorId(id, creatorId);
+    }
+
+    @Override
+    public boolean existsByWallImageId(Integer wallImageId) {
+        return jpaRepository.existsByWallImageId(wallImageId);
     }
 }

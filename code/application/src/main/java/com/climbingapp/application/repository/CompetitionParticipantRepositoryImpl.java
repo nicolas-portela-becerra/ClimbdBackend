@@ -43,6 +43,11 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
     }
 
     @Override
+    public boolean advanceSnapshot(Integer participantId, Integer snapshot) {
+        return jpaRepository.advanceSnapshot(participantId, snapshot) > 0;
+    }
+
+    @Override
     public CompetitionParticipantDTO save(CompetitionParticipantDTO participant) {
         CompetitionParticipantEntity entity = mapper.toEntity(participant);
         return mapper.toDto(jpaRepository.save(entity));

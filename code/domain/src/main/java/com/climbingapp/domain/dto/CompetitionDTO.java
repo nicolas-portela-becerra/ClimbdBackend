@@ -25,7 +25,7 @@ public class CompetitionDTO {
 
     private Integer basePoints;
 
-    private Integer penaltyPerAttempt;
+    private Integer attemptPenalty;
 
     private Integer minPoints;
 

@@ -135,7 +135,7 @@ public class WallImageController implements WallImagesApi {
 
     private boolean existsInGym(Integer wallImageId, Integer gymId) {
         WallImageDTO wallImage = wallImageUseCase.getWallImageById(wallImageId);
-        return ObjectUtils.nullSafeEquals(wallImage.getGymId(), gymId);
+        return wallImage != null && ObjectUtils.nullSafeEquals(wallImage.getGymId(), gymId);
     }
 
     private WallImageDTO buildImage(

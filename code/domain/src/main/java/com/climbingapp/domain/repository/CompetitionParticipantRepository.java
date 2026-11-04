@@ -14,6 +14,9 @@ public interface CompetitionParticipantRepository {
 
     boolean existsByCompetitionIdAndUserId(Integer competitionId, Integer userId);
 
+    /** Stores the snapshot only if it's newer than the stored one. */
+    boolean advanceSnapshot(Integer participantId, Integer snapshot);
+
     CompetitionParticipantDTO save(CompetitionParticipantDTO participant);
 
     void deleteById(Integer id);

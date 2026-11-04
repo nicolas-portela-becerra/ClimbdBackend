@@ -5,6 +5,9 @@ import com.climbingapp.domain.dto.CompetitionDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 public interface CompetitionRepository {
 
     CompetitionDTO findById(Integer id);
@@ -16,4 +19,7 @@ public interface CompetitionRepository {
     void deleteById(Integer id);
 
     boolean existsByIdAndGymId(Integer id, Integer gymId);
+
+    /** Competitions of the gym that have not ended yet (upcoming or running). */
+    List<CompetitionDTO> findNotEndedByGymId(Integer gymId, LocalDateTime now);
 }

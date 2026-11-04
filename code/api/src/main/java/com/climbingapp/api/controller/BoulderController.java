@@ -12,6 +12,7 @@ import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
+import com.climbingapp.domain.exception.ConflictException;
 import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.BoulderUseCase;
@@ -96,10 +97,11 @@ public class BoulderController implements BouldersApi {
     public ResponseEntity<BoulderDetailDto> getBoulderById(
             @PathVariable("boulderId") Integer boulderId) {
         BoulderDTO boulder = boulderUseCase.getBoulderById(boulderId);
-        UserDTO creator = userRepository.findById(boulder.getCreatorId());
-        if (boulder == null) {
+        // Competition boulders are only served by the competition endpoints
+        if (boulder == null || boulder.getCompetitionId() != null) {
             return ResponseEntity.notFound().build();
         }
+        UserDTO creator = userRepository.findById(boulder.getCreatorId());
         return ResponseEntity.ok(
                 mapper.toBoulderDetail(
                         boulder, boulderUseCase.getBoulderHolds(boulderId), creator));
@@ -110,6 +112,7 @@ public class BoulderController implements BouldersApi {
     public ResponseEntity<BoulderDto> updateBoulder(
             @PathVariable("boulderId") Integer boulderId,
             UpdateBoulderRequest updateBoulderRequest) {
+        rejectCompetitionBoulder(boulderId);
         BoulderDTO boulderDto = buildBoulder(boulderId, updateBoulderRequest);
         List<HoldDTO> holds =
                 new ArrayList<>(mapper.toDomainHoldDTOs(updateBoulderRequest.getHolds()));
@@ -128,8 +131,17 @@ public class BoulderController implements BouldersApi {
         if (boulderUseCase.getBoulderById(boulderId) == null) {
             return ResponseEntity.notFound().build();
         }
+        rejectCompetitionBoulder(boulderId);
         boulderUseCase.deleteBoulder(boulderId);
         return ResponseEntity.noContent().build();
+    }
+
+    private void rejectCompetitionBoulder(Integer boulderId) {
+        BoulderDTO boulder = boulderUseCase.getBoulderById(boulderId);
+        if (boulder != null && boulder.getCompetitionId() != null) {
+            throw new ConflictException(
+                    "Competition boulders must be managed through the competition endpoints.");
+        }
     }
 
     private BoulderDTO buildBoulder(Integer gymId, CreateBoulderRequest createBoulderRequest) {

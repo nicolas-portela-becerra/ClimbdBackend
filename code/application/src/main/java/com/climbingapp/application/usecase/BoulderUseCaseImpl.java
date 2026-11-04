@@ -2,6 +2,7 @@ package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.BoulderResponseDTO;
+import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.mapper.BoulderMapper;
@@ -13,6 +14,7 @@ import com.climbingapp.domain.usecase.BoulderUseCase;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -68,6 +70,19 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     @Override
+    @Cacheable(cacheNames = COMPETITION_BOULDERS_CACHE, key = "#competitionId", sync = true)
+    public List<CompetitionBoulderDTO> getCompetitionBoulders(int competitionId) {
+        return boulderRepository.findByCompetitionId(competitionId).stream()
+                .map(
+                        boulder ->
+                                new CompetitionBoulderDTO(
+                                        boulder,
+                                        holdRepository.findByBoulderIdOrderBySequenceOrder(
+                                                boulder.getId())))
+                .toList();
+    }
+
+    @Override
     public Page<BoulderDTO> getAllBoulders(int gymId, Pageable pageable) {
         try {
             return boulderRepository.findByGymId(gymId, pageable);
@@ -82,7 +97,10 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
         try {
             return boulderRepository.findByGymIdWithoutCompetition(gymId, pageable);
         } catch (Exception e) {
-            log.error("Error retrieving non comp boulders for gym with id {}: {}", gymId, e.getMessage());
+            log.error(
+                    "Error retrieving non comp boulders for gym with id {}: {}",
+                    gymId,
+                    e.getMessage());
             throw e;
         }
     }
@@ -90,7 +108,8 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     @Override
     public Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable) {
         try {
-            Page<BoulderDTO> page = boulderRepository.findByWallImageId(wallImageId, pageable);
+            Page<BoulderDTO> page =
+                    boulderRepository.findByWallImageIdWithoutCompetition(wallImageId, pageable);
             List<BoulderResponseDTO> boulderResponseDTOList = addCreatorToBoulder(page);
             return new PageImpl<>(boulderResponseDTOList, pageable, page.getTotalElements());
         } catch (Exception e) {

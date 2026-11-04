@@ -21,6 +21,7 @@ import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.UserUseCase;
+import com.climbingapp.infrastructure.entity.enums.Gender;
 import com.climbingapp.jwt.utils.JwtUserDetailsService;
 import com.climbingapp.jwt.utils.RefreshTokenService;
 import com.climbingapp.jwt.utils.TokenManager;
@@ -111,7 +112,8 @@ class AuthControllerTest {
 
     @Test
     void registerDelegatesToUserUseCaseAndReturnsCreatedWithTokens() {
-        when(userUseCase.register("Test", "user@test.com", "password123")).thenReturn(userDto);
+        when(userUseCase.register("Test", "user@test.com", "password123", Gender.WOMAN))
+                .thenReturn(userDto);
         when(userRepository.findCredentialsByEmail("user@test.com"))
                 .thenReturn(new UserCredentials(1, "user@test.com", "hash", "USER", true));
         when(tokenManager.generateAccessToken(any(UserDetails.class))).thenReturn("access-token");
@@ -124,7 +126,8 @@ class AuthControllerTest {
                         new RegisterRequest()
                                 .email("user@test.com")
                                 .name("Test")
-                                .password("password123"));
+                                .password("password123")
+                                .gender(com.climbingapp.api.dto.Gender.WOMAN));
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -136,7 +139,7 @@ class AuthControllerTest {
 
     @Test
     void registerConflictFromUseCasePropagatesWithoutIssuingTokens() {
-        when(userUseCase.register(any(), any(), any()))
+        when(userUseCase.register(any(), any(), any(), any()))
                 .thenThrow(new DataIntegrityViolationException("Duplicate registration"));
 
         assertThrows(

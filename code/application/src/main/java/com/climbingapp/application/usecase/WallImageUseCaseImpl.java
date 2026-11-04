@@ -1,10 +1,9 @@
 package com.climbingapp.application.usecase;
 
-import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
+import com.climbingapp.domain.exception.ConflictException;
 import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.BoulderRepository;
-import com.climbingapp.domain.repository.HoldRepository;
 import com.climbingapp.domain.repository.WallImageRepository;
 import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.climbingapp.domain.usecase.WallImageUseCase;
@@ -16,10 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -28,8 +25,6 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
     @Autowired private WallImageRepository wallImageRepository;
 
     @Autowired private BoulderRepository boulderRepository;
-
-    @Autowired private HoldRepository holdRepository;
 
     @Autowired private ImageProcessorUseCase imageProcessorUseCase;
 
@@ -72,12 +67,9 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
     @Override
     @Transactional
     public void deleteWallImage(Integer id) {
-        List<BoulderDTO> boulders = boulderRepository.findByWallImageId(id);
-        if (!ObjectUtils.isEmpty(boulders)){
-            holdRepository.deleteByBoulderId(boulders.getFirst().getId());
-            boulderRepository.deleteById(boulders.getFirst().getId());
-        } else {
-            log.info("No boulders to delete in the wall {}", id);
+        if (boulderRepository.existsByWallImageId(id)) {
+            throw new ConflictException(
+                    "The wall image has boulders. Delete its boulders before deleting the wall.");
         }
         wallImageRepository.deleteById(id);
         log.info("Wall image with id {} deleted successfully", id);

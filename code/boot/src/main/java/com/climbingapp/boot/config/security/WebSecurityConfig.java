@@ -38,6 +38,11 @@ public class WebSecurityConfig {
 
     @Autowired private RateLimitFilter rateLimitFilter;
 
+    // Not a bean: Spring Boot would also register it as a servlet filter that runs before the
+    // user is authenticated, which would make the copy in the security chain skip every request
+    private final ResultSubmissionRateLimitFilter resultSubmissionRateLimitFilter =
+            new ResultSubmissionRateLimitFilter();
+
     @Bean
     protected PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
@@ -67,6 +72,8 @@ public class WebSecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(rateLimitFilter, SecurityContextHolderFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(
+                        resultSubmissionRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

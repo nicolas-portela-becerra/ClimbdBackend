@@ -41,8 +41,8 @@ public class CompetitionEntity {
     @Column(name = "base_points")
     private Integer basePoints;
 
-    @Column(name = "penalty_per_attempt")
-    private Integer penaltyPerAttempt;
+    @Column(name = "attempt_penalty")
+    private Integer attemptPenalty;
 
     @Column(name = "min_points")
     private Integer minPoints;

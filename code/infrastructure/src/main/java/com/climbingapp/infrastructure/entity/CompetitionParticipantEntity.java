@@ -47,7 +47,7 @@ public class CompetitionParticipantEntity {
     private Gender gender;
 
     @Column(name = "last_snapshot", nullable = false)
-    private Long lastSnapshot;
+    private Integer lastSnapshot;
 
     @Column(name = "registered_at", nullable = false)
     private LocalDateTime registeredAt;

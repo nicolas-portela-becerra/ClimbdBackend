@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
+import com.climbingapp.infrastructure.entity.enums.Gender;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +45,7 @@ class UserUseCaseImplTest {
                             return user;
                         });
 
-        UserDTO saved = userUseCase.register("Test", " User@Test.COM ", "password123");
+        UserDTO saved = userUseCase.register("Test", " User@Test.COM ", "password123", Gender.MAN);
 
         ArgumentCaptor<UserDTO> userCaptor = ArgumentCaptor.forClass(UserDTO.class);
         ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
@@ -54,6 +55,7 @@ class UserUseCaseImplTest {
         assertEquals("Test", toSave.getName());
         assertEquals("USER", toSave.getRole());
         assertEquals("LOCAL", toSave.getProvider());
+        assertEquals(Gender.MAN, toSave.getGender());
         assertEquals("hash", hashCaptor.getValue()); // hash now travels separately
         assertNotNull(toSave.getCreatedDate());
         assertEquals(1, saved.getId());
@@ -77,9 +79,17 @@ class UserUseCaseImplTest {
 
         assertThrows(
                 DataIntegrityViolationException.class,
-                () -> userUseCase.register("Test", "user@test.com", "password123"));
+                () -> userUseCase.register("Test", "user@test.com", "password123", Gender.MAN));
 
         verify(userRepository, never()).saveWithPassword(any(), anyString());
         verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    void registerWithoutGenderIsRejectedBeforeSaving() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> userUseCase.register("Test", "user@test.com", "password123", null));
+        verify(userRepository, never()).saveWithPassword(any(), any());
     }
 }

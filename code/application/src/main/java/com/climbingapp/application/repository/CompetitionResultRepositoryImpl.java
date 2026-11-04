@@ -43,6 +43,20 @@ public class CompetitionResultRepositoryImpl implements CompetitionResultReposit
     }
 
     @Override
+    public void upsertResults(
+            Integer participantId, Integer competitionId, List<CompetitionResultDTO> results) {
+        if (results.isEmpty()) {
+            return;
+        }
+        jpaRepository.upsertResults(
+                participantId,
+                competitionId,
+                results.stream().map(CompetitionResultDTO::getBoulderId).toArray(Integer[]::new),
+                results.stream().map(CompetitionResultDTO::getAttempts).toArray(Integer[]::new),
+                results.stream().map(CompetitionResultDTO::isTopped).toArray(Boolean[]::new));
+    }
+
+    @Override
     public CompetitionResultDTO save(CompetitionResultDTO result) {
         CompetitionResultEntity entity = mapper.toEntity(result);
         return mapper.toDto(jpaRepository.save(entity));

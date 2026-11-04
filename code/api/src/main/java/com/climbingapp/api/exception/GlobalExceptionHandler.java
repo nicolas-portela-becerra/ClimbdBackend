@@ -1,6 +1,8 @@
 package com.climbingapp.api.exception;
 
 import com.climbingapp.api.dto.ErrorResponse;
+import com.climbingapp.domain.exception.ConflictException;
+import com.climbingapp.domain.exception.ForbiddenException;
 import com.climbingapp.domain.exception.NotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +73,22 @@ public class GlobalExceptionHandler {
                 new ErrorResponse()
                         .message("User does not have permission to access this resource")
                         .status(HttpStatus.FORBIDDEN.value()),
+                HttpStatus.FORBIDDEN);
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler({ConflictException.class})
+    public ResponseEntity<ErrorResponse> handleDomainConflictException(ConflictException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse().message(ex.getMessage()).status(HttpStatus.CONFLICT.value()),
+                HttpStatus.CONFLICT);
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler({ForbiddenException.class})
+    public ResponseEntity<ErrorResponse> handleDomainForbiddenException(ForbiddenException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse().message(ex.getMessage()).status(HttpStatus.FORBIDDEN.value()),
                 HttpStatus.FORBIDDEN);
     }
 

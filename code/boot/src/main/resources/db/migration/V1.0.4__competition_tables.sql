@@ -23,11 +23,11 @@ ALTER TABLE competition
     ADD CONSTRAINT chk_competition_scoring CHECK (
         ("type" = 'X_ATTEMPTS'
             AND base_points IS NOT NULL AND base_points >= 0
-            AND penalty_per_attempt IS NOT NULL AND penalty_per_attempt >= 0
+            AND attempt_penalty IS NOT NULL AND attempt_penalty >= 0
             AND min_points IS NOT NULL AND min_points >= 0 AND min_points <= base_points)
             OR
         ("type" = 'ALL_OR_NOTHING'
-            AND base_points IS NULL AND penalty_per_attempt IS NULL AND min_points IS NULL)
+            AND base_points IS NULL AND attempt_penalty IS NULL AND min_points IS NULL)
         );
 
 ALTER TABLE boulder ADD COLUMN competition_id INTEGER;
@@ -59,7 +59,9 @@ CREATE TABLE IF NOT EXISTS competition_result (
     competition_id INT NOT NULL,
     attempts INT NOT NULL DEFAULT 0,
     topped BOOLEAN NOT NULL DEFAULT FALSE,
+    points INT NOT NULL DEFAULT 0,
     UNIQUE (participant_id, boulder_id),
+    CHECK (NOT topped OR attempts >= 1),
     FOREIGN KEY (participant_id, competition_id)
         REFERENCES competition_participant (id, competition_id),
     FOREIGN KEY (boulder_id, competition_id)

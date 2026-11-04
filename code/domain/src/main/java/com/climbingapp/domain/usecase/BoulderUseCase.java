@@ -2,6 +2,7 @@ package com.climbingapp.domain.usecase;
 
 import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.BoulderResponseDTO;
+import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 
 import org.springframework.data.domain.Page;
@@ -11,6 +12,11 @@ import java.util.List;
 
 public interface BoulderUseCase {
 
+    String COMPETITION_BOULDERS_CACHE = "competitionBoulders";
+
+    /** Boulders of a competition with their holds. Cached in Redis, no date checks. */
+    List<CompetitionBoulderDTO> getCompetitionBoulders(int competitionId);
+
     BoulderDTO createBoulder(BoulderDTO boulderDTO, List<HoldDTO> holds);
 
     BoulderDTO getBoulderById(int id);
@@ -19,7 +25,7 @@ public interface BoulderUseCase {
 
     Page<BoulderDTO> getAllBoulders(int gymId, Pageable pageable);
 
-    Page<BoulderDTO> getAllNonCompBoulders(int  gymId, Pageable pageable);
+    Page<BoulderDTO> getAllNonCompBoulders(int gymId, Pageable pageable);
 
     Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable);
 
