@@ -17,6 +17,7 @@ import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.BoulderUseCase;
 import com.climbingapp.domain.usecase.WallImageUseCase;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -106,7 +107,7 @@ public class BoulderController implements BouldersApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @boulderSecurity.isCreator(#boulderId, authentication)")
+    @PreAuthorize("@gymSecurity.canEditBoulder(#boulderId, authentication)")
     public ResponseEntity<BoulderDto> updateBoulder(
             @PathVariable("boulderId") Integer boulderId,
             UpdateBoulderRequest updateBoulderRequest) {
@@ -124,7 +125,7 @@ public class BoulderController implements BouldersApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @boulderSecurity.isCreator(#boulderId, authentication)")
+    @PreAuthorize("@gymSecurity.canEditBoulder(#boulderId, authentication)")
     public ResponseEntity<Void> deleteBoulder(@PathVariable("boulderId") Integer boulderId) {
         if (boulderUseCase.getBoulderById(boulderId) == null) {
             return ResponseEntity.notFound().build();
@@ -146,7 +147,7 @@ public class BoulderController implements BouldersApi {
         BoulderDTO boulder = new BoulderDTO();
         boulder.setGymId(gymId);
         boulder.setWallImageId(createBoulderRequest.getWallImageId());
-        boulder.setCreatorId(createBoulderRequest.getCreatedBy());
+        boulder.setCreatorId(AuthenticatedUser.current().getId());
         boulder.setName(createBoulderRequest.getName());
         boulder.setGrade(createBoulderRequest.getGrade());
         boulder.setDescription(createBoulderRequest.getDescription());
@@ -159,9 +160,7 @@ public class BoulderController implements BouldersApi {
         boulder.setDescription(updateBoulderRequest.getDescription());
         boulder.setName(updateBoulderRequest.getName());
         boulder.setGrade(updateBoulderRequest.getGrade());
-        boulder.setCreatorId(updateBoulderRequest.getCreatorId());
         boulder.setWallImageId(updateBoulderRequest.getWallImageId());
-        boulder.setGymId(updateBoulderRequest.getGymId());
         return boulder;
     }
 }

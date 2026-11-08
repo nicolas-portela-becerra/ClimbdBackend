@@ -9,8 +9,10 @@ import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
+import com.climbingapp.domain.usecase.GymUseCase;
 import com.climbingapp.domain.usecase.UserUseCase;
 import com.climbingapp.infrastructure.entity.enums.Gender;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 import com.climbingapp.jwt.utils.JwtUserDetailsService;
 import com.climbingapp.jwt.utils.RefreshTokenService;
 import com.climbingapp.jwt.utils.TokenManager;
@@ -26,13 +28,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -49,6 +47,8 @@ public class AuthController implements AuthApi {
     @Autowired private UserRepository userRepository;
 
     @Autowired private UserUseCase userUseCase;
+
+    @Autowired private GymUseCase gymUseCase;
 
     @Autowired private ApiDtoMapper mapper;
 
@@ -154,10 +154,7 @@ public class AuthController implements AuthApi {
     }
 
     private UserDetails buildUserDetails(UserCredentials credentials) {
-        return new User(
-                credentials.email(),
-                credentials.passwordHash(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + credentials.role())));
+        return new AuthenticatedUser(credentials);
     }
 
     private String normalize(String email) {
@@ -168,6 +165,7 @@ public class AuthController implements AuthApi {
         return new AuthResponse()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(mapper.toUserDto(user));
+                .user(mapper.toUserDto(user))
+                .gymRoles(mapper.toApiGymRoles(gymUseCase.getGymRoles(user.getId())));
     }
 }

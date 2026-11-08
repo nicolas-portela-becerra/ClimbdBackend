@@ -11,7 +11,6 @@ import com.climbingapp.infrastructure.view.CompetitionRankingView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -72,7 +71,8 @@ public class CompetitionResultRepositoryImpl implements CompetitionResultReposit
     }
 
     @Override
-    public List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId, Timestamp now) {
+    public List<CompetitionRankingRecord> getCompetitionRanking(
+            Integer competitionId, Timestamp now) {
         List<CompetitionRankingView> ranking =
                 jpaRepository.getFinalCompetitionResults(competitionId, now);
         return ranking.stream()
