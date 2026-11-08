@@ -14,17 +14,14 @@ import com.climbingapp.api.dto.SubmitCompetitionResultsRequest;
 import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
-import com.climbingapp.domain.dto.UserDTO;
-import com.climbingapp.domain.exception.NotFoundException;
-import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.CompetitionUseCase;
 import com.climbingapp.infrastructure.entity.enums.CompetitionSection;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,12 +33,10 @@ public class CompetitionController implements CompetitionsApi {
 
     @Autowired private CompetitionUseCase competitionUseCase;
 
-    @Autowired private UserRepository userRepository;
-
     @Autowired private ApiDtoMapper mapper;
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    @PreAuthorize("@gymSecurity.isStaff(#gymId, authentication)")
     public ResponseEntity<CompetitionDto> createCompetition(
             @PathVariable("gymId") Integer gymId, CompetitionRequest competitionRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -52,8 +47,7 @@ public class CompetitionController implements CompetitionsApi {
     }
 
     @Override
-    @PreAuthorize(
-            "hasRole('ADMIN') or @competitionSecurity.isOwner(#competitionId, authentication)")
+    @PreAuthorize("@gymSecurity.isCompetitionStaff(#competitionId, authentication)")
     public ResponseEntity<CompetitionDto> updateCompetition(
             @PathVariable("competitionId") Integer competitionId,
             CompetitionRequest competitionRequest) {
@@ -68,7 +62,7 @@ public class CompetitionController implements CompetitionsApi {
             @PathVariable("gymId") Integer gymId) {
         return ResponseEntity.ok(
                 mapper.toApiAnnouncements(
-                        competitionUseCase.getActiveCompetitions(gymId, getCurrentUser().getId())));
+                        competitionUseCase.getActiveCompetitions(gymId, currentUserId())));
     }
 
     @Override
@@ -81,19 +75,18 @@ public class CompetitionController implements CompetitionsApi {
                 .body(
                         mapper.toApiParticipant(
                                 competitionUseCase.register(
-                                        competitionId, getCurrentUser().getId(), section)));
+                                        competitionId, currentUserId(), section)));
     }
 
     @Override
     public ResponseEntity<Void> unregisterFromCompetition(
             @PathVariable("competitionId") Integer competitionId) {
-        competitionUseCase.unregister(competitionId, getCurrentUser().getId());
+        competitionUseCase.unregister(competitionId, currentUserId());
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    @PreAuthorize(
-            "hasRole('ADMIN') or @competitionSecurity.isOwner(#competitionId, authentication)")
+    @PreAuthorize("@gymSecurity.isCompetitionStaff(#competitionId, authentication)")
     public ResponseEntity<List<CompetitionRankingEntryDto>> getCompetitionRanking(
             @PathVariable("competitionId") Integer competitionId) {
         return ResponseEntity.ok(
@@ -106,7 +99,9 @@ public class CompetitionController implements CompetitionsApi {
         return ResponseEntity.ok(
                 mapper.toApiCompetitionBoulders(
                         competitionUseCase.getCompetitionBoulders(
-                                competitionId, getCurrentUser().getId(), isAdmin())));
+                                competitionId,
+                                currentUserId(),
+                                AuthenticatedUser.current().isAdmin())));
     }
 
     @Override
@@ -117,7 +112,7 @@ public class CompetitionController implements CompetitionsApi {
                 mapper.toApiUserStatus(
                         competitionUseCase.submitResults(
                                 competitionId,
-                                getCurrentUser().getId(),
+                                currentUserId(),
                                 request.getSnapshot(),
                                 mapper.toDomainResults(request.getResults()))));
     }
@@ -127,22 +122,16 @@ public class CompetitionController implements CompetitionsApi {
             @PathVariable("competitionId") Integer competitionId) {
         return ResponseEntity.ok(
                 mapper.toApiUserStatus(
-                        competitionUseCase.getUserStatus(competitionId, getCurrentUser().getId())));
-    }
-
-    private boolean isAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+                        competitionUseCase.getUserStatus(competitionId, currentUserId())));
     }
 
     @Override
-    @PreAuthorize(
-            "hasRole('ADMIN') or @competitionSecurity.isOwner(#competitionId, authentication)")
+    @PreAuthorize("@gymSecurity.isCompetitionStaff(#competitionId, authentication)")
     public ResponseEntity<CompetitionBoulderDto> createCompetitionBoulder(
             @PathVariable("competitionId") Integer competitionId,
             CompetitionBoulderRequest competitionBoulderRequest) {
         BoulderDTO boulder = mapper.toDomainCompetitionBoulder(competitionBoulderRequest);
-        boulder.setCreatorId(getCurrentUser().getId());
+        boulder.setCreatorId(currentUserId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         mapper.toApiCompetitionBoulder(
@@ -153,8 +142,7 @@ public class CompetitionController implements CompetitionsApi {
     }
 
     @Override
-    @PreAuthorize(
-            "hasRole('ADMIN') or @competitionSecurity.isOwner(#competitionId, authentication)")
+    @PreAuthorize("@gymSecurity.isCompetitionStaff(#competitionId, authentication)")
     public ResponseEntity<CompetitionBoulderDto> updateCompetitionBoulder(
             @PathVariable("competitionId") Integer competitionId,
             @PathVariable("boulderId") Integer boulderId,
@@ -170,8 +158,7 @@ public class CompetitionController implements CompetitionsApi {
     }
 
     @Override
-    @PreAuthorize(
-            "hasRole('ADMIN') or @competitionSecurity.isOwner(#competitionId, authentication)")
+    @PreAuthorize("@gymSecurity.isCompetitionStaff(#competitionId, authentication)")
     public ResponseEntity<Void> deleteCompetitionBoulder(
             @PathVariable("competitionId") Integer competitionId,
             @PathVariable("boulderId") Integer boulderId) {
@@ -192,12 +179,7 @@ public class CompetitionController implements CompetitionsApi {
         return holds;
     }
 
-    private UserDTO getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserDTO user = userRepository.findByEmail(email);
-        if (user == null) {
-            throw new NotFoundException("Authenticated user does not exist.");
-        }
-        return user;
+    private static Integer currentUserId() {
+        return AuthenticatedUser.current().getId();
     }
 }

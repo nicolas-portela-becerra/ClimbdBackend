@@ -16,8 +16,10 @@ import com.climbingapp.api.dto.CompetitionUserStatusDto;
 import com.climbingapp.api.dto.CreateHoldRequest;
 import com.climbingapp.api.dto.GymDto;
 import com.climbingapp.api.dto.GymPageResponse;
+import com.climbingapp.api.dto.GymStaffDto;
 import com.climbingapp.api.dto.HoldDto;
 import com.climbingapp.api.dto.UserDto;
+import com.climbingapp.api.dto.UserGymRoleDto;
 import com.climbingapp.api.dto.WallImageDetail;
 import com.climbingapp.api.dto.WallImagePageResponse;
 import com.climbingapp.api.dto.WallImageSummary;
@@ -31,8 +33,10 @@ import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 import com.climbingapp.domain.dto.CompetitionUserStatusDTO;
 import com.climbingapp.domain.dto.GymDTO;
+import com.climbingapp.domain.dto.GymStaffMemberDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
+import com.climbingapp.domain.dto.UserGymRoleDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
 
 import org.mapstruct.IterableMapping;
@@ -55,9 +59,16 @@ public interface ApiDtoMapper {
 
     List<UserDto> toUserDtos(List<UserDTO> userDtos);
 
+    @Mapping(target = "createdByAdminId", source = "creatorId")
     GymDto toApiGym(GymDTO dto);
 
     GymPageResponse toGymPage(Page<GymDTO> page);
+
+    GymStaffDto toApiStaff(GymStaffMemberDTO dto);
+
+    List<GymStaffDto> toApiStaff(List<GymStaffMemberDTO> dtos);
+
+    List<UserGymRoleDto> toApiGymRoles(List<UserGymRoleDTO> dtos);
 
     BoulderDto toApiBoulder(BoulderDTO dto);
 

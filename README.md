@@ -15,13 +15,13 @@ The project is being developed as a personal project and portfolio piece, with a
 * Logout from a single session or all sessions
 * Google OAuth authentication **(TODO)**
 * Apple OAuth authentication **(TODO)**
-* Role-based access control
+* Role-based access control: global roles (`ADMIN`, `USER`) plus per-gym roles (`OWNER`, `SETTER`)
 * Protected gym and boulder operations
 
 ### Gym Management
 
-* Create and manage climbing gyms
-* Assign gym owners
+* Create and manage climbing gyms (name, description, location, time zone, logo)
+* Manage gym staff: admins assign owners, owners add or remove setters by email
 * Retrieve gyms with pagination
 * Role and ownership-based authorization
 
@@ -43,7 +43,7 @@ The project is being developed as a personal project and portfolio piece, with a
 * Retrieve detailed boulder information
 * Update boulders
 * Delete boulders
-* Creator and administrator authorization
+* Creator, gym staff and administrator authorization (staff can moderate user boulders)
 
 ### API Protection
 
@@ -127,10 +127,21 @@ POST /api/auth/oauth/apple
 GET  /api/gyms
 POST /api/gyms
 
-GET  /api/gyms/{gymId}
-PUT  /api/gyms/{gymId}
+GET    /api/gyms/{gymId}
+PUT    /api/gyms/{gymId}
+DELETE /api/gyms/{gymId}
 
-POST /api/gyms/{gymId}/owners
+GET    /api/gyms/{gymId}/staff
+POST   /api/gyms/{gymId}/staff
+DELETE /api/gyms/{gymId}/staff/{userId}
+```
+
+### Users
+
+```text
+GET  /api/users/me
+GET  /api/users/deactivated
+POST /api/users/activate-users
 ```
 
 ### Wall Images
@@ -158,6 +169,46 @@ DELETE /api/boulders/{boulderId}
 ```
 
 The complete API contract can be found in [`code/openapi.yml`](./code/openapi.yml).
+
+## Roles & permissions
+
+There are two kinds of role:
+
+* **Global role** (`user.role`): `ADMIN` or `USER`. Admins can do everything.
+* **Gym role** (`gym_staff` table): `OWNER` or `SETTER`, separately for each gym. One user can own one gym and set in another. `OWNER` can do everything `SETTER` can.
+
+| Action | Who |
+|---|---|
+| Create or delete a gym, assign or remove owners, activate users | `ADMIN` |
+| Edit gym settings (name, description, location, time zone, logo), add or remove setters | `ADMIN`, gym `OWNER` |
+| Upload, edit or delete walls; create or edit competitions, their boulders and the ranking | `ADMIN`, gym `OWNER`, gym `SETTER` |
+| Edit or delete a regular boulder | its creator, or `ADMIN`/`OWNER`/`SETTER` of its gym |
+| Create a regular boulder, view gyms, walls and boulders, take part in competitions | any user |
+
+Gym roles are **not** stored in the JWT. They are checked against the database on every request, so a removed setter loses access straight away.
+
+### Using roles in the frontend
+
+`POST /api/auth/login`, `/register` and `/refresh` return `gymRoles` next to `user`, and `GET /api/users/me` returns the same data on demand:
+
+```json
+{
+  "user": { "id": 3, "role": "USER", "...": "..." },
+  "gymRoles": [{ "gymId": 1, "gymName": "Gym1", "role": "SETTER" }]
+}
+```
+
+Suggested helpers:
+
+```ts
+const isAdmin = user.role === 'ADMIN';
+const gymRole = (gymId) => gymRoles.find(r => r.gymId === gymId)?.role;
+const canManageGym = (gymId) => isAdmin || gymRole(gymId) === 'OWNER';   // settings, logo, staff
+const canSet = (gymId) => canManageGym(gymId) || gymRole(gymId) === 'SETTER'; // walls, competitions, moderation
+const canEditBoulder = (b) => canSet(b.gymId) || b.creatorId === user.id;
+```
+
+Hiding controls only improves the UI. The backend still enforces every rule and returns `403` otherwise.
 
 ---
 

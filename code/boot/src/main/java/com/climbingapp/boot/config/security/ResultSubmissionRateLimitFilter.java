@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.util.regex.Pattern;
  * participants usually share the gym's Wi-Fi and therefore its public IP.
  */
 @Slf4j
+@Component("resultSubmissionRateLimitFilter")
 public class ResultSubmissionRateLimitFilter extends OncePerRequestFilter {
 
     private static final Pattern RESULTS_PATH = Pattern.compile("^/api/competitions/\\d+/results$");
