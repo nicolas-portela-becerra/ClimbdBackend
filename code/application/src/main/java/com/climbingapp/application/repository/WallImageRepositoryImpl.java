@@ -25,7 +25,7 @@ public class WallImageRepositoryImpl implements WallImageRepository {
 
     @Override
     public Page<WallImageDTO> findByGymId(Integer gymId, Pageable pageable) {
-        return jpaRepository.findByGymId(gymId, pageable).map(mapper::toDto);
+        return jpaRepository.findSummariesByGymId(gymId, pageable).map(mapper::toDto);
     }
 
     @Override

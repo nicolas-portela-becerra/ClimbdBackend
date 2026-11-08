@@ -100,7 +100,13 @@ class RateLimitFilterTest {
                     .put(
                             "idle-" + i,
                             io.github.bucket4j.Bucket.builder()
-                                    .addLimit(l -> l.capacity(10).refillGreedy(10, java.time.Duration.ofMinutes(1)))
+                                    .addLimit(
+                                            l ->
+                                                    l.capacity(10)
+                                                            .refillGreedy(
+                                                                    10,
+                                                                    java.time.Duration.ofMinutes(
+                                                                            1)))
                                     .build());
         }
 

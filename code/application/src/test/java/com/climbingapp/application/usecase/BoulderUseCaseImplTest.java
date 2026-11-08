@@ -32,8 +32,7 @@ class BoulderUseCaseImplTest {
         BoulderUseCaseImpl useCase = new BoulderUseCaseImpl();
         ReflectionTestUtils.setField(useCase, "boulderRepository", boulderRepository);
         ReflectionTestUtils.setField(useCase, "holdRepository", holdRepository);
-        ReflectionTestUtils.setField(
-                useCase, "clock", Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(useCase, "clock", Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
 
         BoulderDTO own = new BoulderDTO();
         own.setId(1);

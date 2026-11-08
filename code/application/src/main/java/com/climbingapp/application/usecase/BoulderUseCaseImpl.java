@@ -25,6 +25,9 @@ import org.springframework.util.ObjectUtils;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -194,12 +197,16 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     private List<BoulderResponseDTO> addCreatorToBoulder(Page<BoulderDTO> boulders) {
+        Map<Integer, UserDTO> creators =
+                userRepository
+                        .findAllById(
+                                boulders.getContent().stream()
+                                        .map(BoulderDTO::getCreatorId)
+                                        .collect(Collectors.toSet()))
+                        .stream()
+                        .collect(Collectors.toMap(UserDTO::getId, Function.identity()));
         return boulders.getContent().stream()
-                .map(
-                        boulder -> {
-                            UserDTO creator = userRepository.findById(boulder.getCreatorId());
-                            return boulderMapper.toResponseDTO(boulder, creator);
-                        })
+                .map(boulder -> boulderMapper.toResponseDTO(boulder, creators.get(boulder.getCreatorId())))
                 .toList();
     }
 }

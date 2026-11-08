@@ -10,6 +10,7 @@ import com.climbingapp.infrastructure.repository.UserJPARepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -46,6 +47,11 @@ public class UserRepositoryImpl implements UserRepository {
         UserEntity entity = mapper.toEntity(user);
         entity.setPasswordHash(passwordHash);
         return mapper.toDto(jpaRepository.save(entity));
+    }
+
+    @Override
+    public List<UserDTO> findAllById(Collection<Integer> userIds) {
+        return jpaRepository.findAllById(userIds).stream().map(mapper::toDto).toList();
     }
 
     @Override

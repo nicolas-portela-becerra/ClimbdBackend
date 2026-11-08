@@ -21,8 +21,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class AuthenticatedUser extends User {
 
-    @Serial
-    private static final long serialVersionUID = -2274464063191563649L;
+    @Serial private static final long serialVersionUID = -2274464063191563649L;
 
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
 

@@ -288,6 +288,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of gyms
@@ -508,6 +510,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of wall image summaries
@@ -696,6 +700,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of boulders
@@ -753,6 +759,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of boulders on the wall image
