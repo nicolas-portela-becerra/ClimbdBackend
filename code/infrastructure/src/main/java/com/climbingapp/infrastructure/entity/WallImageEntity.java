@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "wall_image")
@@ -49,5 +49,5 @@ public class WallImageEntity {
     private Integer uploadedBy;
 
     @Column(name = "uploaded_date", nullable = false)
-    private LocalDateTime uploadedDate;
+    private Instant uploadedDate;
 }

@@ -17,9 +17,17 @@ public interface BoulderRepository {
 
     List<BoulderDTO> findByWallImageId(Integer wallImageId);
 
+    List<BoulderDTO> findByCompetitionId(Integer competitionId);
+
+    Page<BoulderDTO> findByWallImageIdWithoutCompetition(Integer wallImageId, Pageable pageable);
+
+    Page<BoulderDTO> findByGymIdWithoutCompetition(Integer gymId, Pageable pageable);
+
     BoulderDTO save(BoulderDTO boulder);
 
     void deleteById(Integer id);
 
     boolean existsByIdAndCreatorId(Integer id, Integer creatorId);
+
+    boolean existsByWallImageId(Integer wallImageId);
 }

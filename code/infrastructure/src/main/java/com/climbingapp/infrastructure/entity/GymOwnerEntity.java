@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(
@@ -31,5 +31,5 @@ public class GymOwnerEntity {
     private Integer assignedBy;
 
     @Column(name = "assigned_at", nullable = false)
-    private LocalDateTime assignedAt;
+    private Instant assignedAt;
 }

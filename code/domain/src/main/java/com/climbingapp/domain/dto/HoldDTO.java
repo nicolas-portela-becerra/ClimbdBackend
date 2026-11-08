@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -24,7 +24,7 @@ public class HoldDTO {
 
     private Integer color;
 
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 
-    private LocalDateTime updatedDate;
+    private Instant updatedDate;
 }
