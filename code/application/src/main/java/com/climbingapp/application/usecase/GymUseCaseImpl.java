@@ -16,7 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
 @Slf4j
 @Service
@@ -30,9 +32,13 @@ public class GymUseCaseImpl implements GymUseCase {
 
     @Autowired private ImageProcessorUseCase imageProcessorUseCase;
 
+    @Autowired private Clock clock;
+
     @Override
     public GymDTO createGym(GymDTO gymDTO) {
         try {
+            validateTimeZone(gymDTO.getTimeZone());
+            gymDTO.setCreatedDate(Instant.now(clock));
             if (gymDTO.getLogo() != null) {
                 gymDTO.setLogo(imageProcessorUseCase.resize(gymDTO.getLogo(), 512, 512));
             }
@@ -69,6 +75,12 @@ public class GymUseCaseImpl implements GymUseCase {
             GymDTO currentGym = gymRepository.findById(newGymDTO.getId());
 
             if (currentGym == null) return currentGym;
+
+            if (newGymDTO.getTimeZone() == null) {
+                newGymDTO.setTimeZone(currentGym.getTimeZone());
+            } else {
+                validateTimeZone(newGymDTO.getTimeZone());
+            }
 
             if (!newGymDTO.equals(currentGym)) {
                 currentGym = gymRepository.save(newGymDTO);
@@ -112,7 +124,18 @@ public class GymUseCaseImpl implements GymUseCase {
         gymOwnerDTO.setGymId(gymId);
         gymOwnerDTO.setUserId(userId);
         gymOwnerDTO.setAssignedBy(assigneeId);
-        gymOwnerDTO.setAssignedAt(LocalDateTime.now());
+        gymOwnerDTO.setAssignedAt(Instant.now(clock));
         return gymOwnerDTO;
+    }
+
+    /**
+     * Only IANA region ids (e.g. Europe/Madrid) are accepted. Fixed offsets such as +01:00 are
+     * rejected because they don't follow daylight saving time.
+     */
+    private static void validateTimeZone(String timeZone) {
+        if (timeZone == null || !ZoneId.getAvailableZoneIds().contains(timeZone)) {
+            throw new IllegalArgumentException(
+                    "A valid IANA time zone is required (e.g. Europe/Madrid).");
+        }
     }
 }

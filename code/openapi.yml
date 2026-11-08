@@ -18,6 +18,8 @@ tags:
     description: Wall image upload and retrieval
   - name: Boulders
     description: Boulder creation and viewing
+  - name: Competitions
+    description: Competitions, registrations and competition boulders
 
 paths:
   /api/auth/register:
@@ -517,6 +519,12 @@ paths:
           description: Forbidden
         '404':
           description: Wall image not found
+        '409':
+          description: The wall image still has boulders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       security:
         - bearerAuth: []
   /api/wall-images/{wallImageId}/data:
@@ -709,6 +717,12 @@ paths:
           description: Forbidden - not the creator
         '404':
           description: Boulder not found
+        '409':
+          description: Competition boulders must be managed through the competition endpoints
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       security:
         - bearerAuth: []
     delete:
@@ -728,6 +742,440 @@ paths:
           description: Forbidden
         '404':
           description: Boulder not found
+        '409':
+          description: Competition boulders must be managed through the competition endpoints
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}/competitions:
+    post:
+      operationId: createCompetition
+      tags: [Competitions]
+      summary: Create a competition for a gym (admin or gym owner)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionRequest'
+      responses:
+        '201':
+          description: Competition created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin or gym owner only
+        '404':
+          description: Gym not found
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}/competitions/active:
+    get:
+      operationId: listActiveCompetitions
+      tags: [Competitions]
+      summary: Upcoming and running competitions of a gym
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Competitions that have not ended yet or ended less than 12 hours ago
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitionAnnouncementDto'
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}:
+    put:
+      operationId: updateCompetition
+      tags: [Competitions]
+      summary: Replace a competition before it starts (admin or gym owner)
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionRequest'
+      responses:
+        '200':
+          description: Competition updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin or gym owner only
+        '404':
+          description: Competition not found
+        '409':
+          description: The competition has already started, or its type can't change because it has boulders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}/registration:
+    post:
+      operationId: registerForCompetition
+      tags: [Competitions]
+      summary: Register the current user for a competition (before it starts)
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionRegistrationRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionParticipantDto'
+        '400':
+          description: Invalid input or the user has no gender set in their profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Competition not found
+        '409':
+          description: Already registered or the competition has already started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+    delete:
+      operationId: unregisterFromCompetition
+      tags: [Competitions]
+      summary: Unregister the current user from a competition (before it starts)
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: User unregistered
+        '404':
+          description: Competition not found or the user is not registered
+        '409':
+          description: The competition has already started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}/boulders:
+    get:
+      operationId: listCompetitionBoulders
+      tags: [Competitions]
+      summary: All boulders of a competition with their holds
+      description: >-
+        Only available from the start of the competition until 24 hours after it ends.
+        Admins and owners of the gym can see them at any time.
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Competition boulders with holds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitionBoulderDto'
+        '403':
+          description: The competition has not started yet or its boulders are no longer available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Competition not found
+      security:
+        - bearerAuth: []
+    post:
+      operationId: createCompetitionBoulder
+      tags: [Competitions]
+      summary: Create a competition boulder before it starts (admin or gym owner)
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionBoulderRequest'
+      responses:
+        '201':
+          description: Boulder created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionBoulderDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin or gym owner only
+        '404':
+          description: Competition not found
+        '409':
+          description: The competition has already started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}/boulders/{boulderId}:
+    put:
+      operationId: updateCompetitionBoulder
+      tags: [Competitions]
+      summary: Replace a competition boulder and its holds before it starts (admin or gym owner)
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: boulderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitionBoulderRequest'
+      responses:
+        '200':
+          description: Boulder updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionBoulderDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - admin or gym owner only
+        '404':
+          description: Competition or boulder not found
+        '409':
+          description: The competition has already started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+    delete:
+      operationId: deleteCompetitionBoulder
+      tags: [Competitions]
+      summary: Delete a competition boulder before it starts (admin or gym owner)
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: boulderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Boulder deleted
+        '403':
+          description: Forbidden - admin or gym owner only
+        '404':
+          description: Competition or boulder not found
+        '409':
+          description: The competition has already started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}/results:
+    post:
+      operationId: submitCompetitionResults
+      tags: [Competitions]
+      summary: Send the current user's full results snapshot
+      description: >-
+        Accepted from the start of the competition until dateTo plus the grace period.
+        Always send every boulder the user has tried. Snapshots with a number lower than or
+        equal to the stored one are ignored (accepted = false) and the stored state is returned.
+        Limited to a few requests per user every 15 seconds.
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitCompetitionResultsRequest'
+      responses:
+        '200':
+          description: Stored state of the user after processing the snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionUserStatusDto'
+        '400':
+          description: Invalid results (unknown or repeated boulder, negative attempts, top with 0 attempts)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The user is not registered for the competition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Competition not found
+        '409':
+          description: The competition has not started or is closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many submissions, retry in a few seconds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}/results/me:
+    get:
+      operationId: getMyCompetitionStatus
+      tags: [Competitions]
+      summary: Stored results and points of the current user in a competition
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The user's stored state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionUserStatusDto'
+        '404':
+          description: Competition not found or the user is not registered
+      security:
+        - bearerAuth: []
+  /api/competitions/{competitionId}/ranking:
+    get:
+      operationId: getCompetitionRanking
+      tags: [Competitions]
+      summary: Full ranking of a competition (admin or gym owner)
+      description: >-
+        One row per participant, with their section and gender so the frontend can filter it
+        into the four groups. Sorted by totalPoints, then flashTops, then totalAttempts.
+        A competition shows its complete data once dateTo plus its grace period have passed;
+        before that the list is empty.
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ranking list, empty while the competition is in its grace period or running
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitionRankingEntryDto'
+        '403':
+          description: Only admins and the owner of the competition's gym can see the ranking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Competition not found
       security:
         - bearerAuth: []
 components:
@@ -743,6 +1191,7 @@ components:
         - email
         - name
         - password
+        - gender
       properties:
         email:
           type: string
@@ -753,6 +1202,8 @@ components:
           type: string
           minLength: 8
           maxLength: 72
+        gender:
+          $ref: '#/components/schemas/Gender'
     LoginRequest:
       type: object
       required:
@@ -803,6 +1254,11 @@ components:
         role:
           type: string
           enum: [ADMIN, USER]
+        gender:
+          nullable: true
+          description: Empty for accounts created before gender was required
+          allOf:
+            - $ref: '#/components/schemas/Gender'
     DeactivatedUsersResponse:
       type: object
       properties:
@@ -829,20 +1285,31 @@ components:
           nullable: true
         createdByAdminId:
           type: integer
+        timeZone:
+          type: string
+          example: Europe/Madrid
+          description: IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         createdDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         updatedDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
           nullable: true
     CreateGymRequest:
       type: object
       required:
         - name
+        - timeZone
       properties:
         name:
           type: string
+        timeZone:
+          type: string
+          example: Europe/Madrid
+          description: IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
           type: string
         description:
@@ -858,6 +1325,10 @@ components:
       properties:
         name:
           type: string
+        timeZone:
+          type: string
+          example: Europe/Madrid
+          description: Optional. IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
           type: string
           nullable: true
@@ -898,6 +1369,7 @@ components:
         uploadedDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         thumbnailUrl:
           type: string
     WallImageDetail:
@@ -964,9 +1436,11 @@ components:
         createdDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         updatedDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
           nullable: true
     BoulderResponseDto:
       type: object
@@ -1149,3 +1623,283 @@ components:
         timestamp:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+    CompetitionType:
+      type: string
+      enum: [ALL_OR_NOTHING, X_ATTEMPTS]
+    CompetitionSection:
+      type: string
+      enum: [OPEN, AMATEUR]
+    CompetitionStatus:
+      type: string
+      enum: [UPCOMING, RUNNING, ENDED]
+      description: UPCOMING before dateFrom, RUNNING until dateTo, ENDED afterwards
+    Gender:
+      type: string
+      enum: [MAN, WOMAN, OTHER]
+    CompetitionRequest:
+      type: object
+      required:
+        - name
+        - type
+        - dateFrom
+        - dateTo
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/CompetitionType'
+        dateFrom:
+          type: string
+          format: date-time
+          description: Start of the competition, sent with its offset (converted to UTC)
+        dateTo:
+          type: string
+          format: date-time
+          description: End of the competition, sent with its offset (converted to UTC)
+        graceMinutes:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Minutes after the end to keep accepting results. Defaults to 5
+        basePoints:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: X_ATTEMPTS only. Points for a top on the first attempt
+        attemptPenalty:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: X_ATTEMPTS only. Points subtracted for each extra attempt
+        minPoints:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: X_ATTEMPTS only. Lowest points a top can give
+    CompetitionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        gymId:
+          type: integer
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/CompetitionType'
+        dateFrom:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+        dateTo:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+        graceMinutes:
+          type: integer
+        basePoints:
+          type: integer
+          nullable: true
+        attemptPenalty:
+          type: integer
+          nullable: true
+        minPoints:
+          type: integer
+          nullable: true
+        createdDate:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+    CompetitionAnnouncementDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/CompetitionType'
+        dateFrom:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+        dateTo:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+        status:
+          $ref: '#/components/schemas/CompetitionStatus'
+        registered:
+          type: boolean
+          description: Whether the current user is registered
+    CompetitionRegistrationRequest:
+      type: object
+      required:
+        - section
+      properties:
+        section:
+          $ref: '#/components/schemas/CompetitionSection'
+    CompetitionParticipantDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        competitionId:
+          type: integer
+        userId:
+          type: integer
+        section:
+          $ref: '#/components/schemas/CompetitionSection'
+        gender:
+          $ref: '#/components/schemas/Gender'
+        registeredAt:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+    CompetitionBoulderRequest:
+      type: object
+      required:
+        - name
+        - grade
+        - wallImageId
+        - holds
+      properties:
+        name:
+          type: string
+        grade:
+          type: string
+          description: Fontainebleau grade (e.g. 6A+, 7B)
+        description:
+          type: string
+          nullable: true
+        wallImageId:
+          type: integer
+        points:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Required for ALL_OR_NOTHING competitions, must be empty for X_ATTEMPTS
+        holds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateHoldRequest'
+    CompetitionBoulderDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        competitionId:
+          type: integer
+        wallImageId:
+          type: integer
+        name:
+          type: string
+        grade:
+          type: string
+        description:
+          type: string
+          nullable: true
+        points:
+          type: integer
+          nullable: true
+        holds:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoldDto'
+    BoulderResultRequest:
+      type: object
+      required:
+        - boulderId
+        - attempts
+        - topped
+      properties:
+        boulderId:
+          type: integer
+        attempts:
+          type: integer
+          minimum: 0
+        topped:
+          type: boolean
+    SubmitCompetitionResultsRequest:
+      type: object
+      required:
+        - snapshot
+        - results
+      properties:
+        snapshot:
+          type: integer
+          minimum: 1
+          description: Increasing number generated by the frontend for every send
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoulderResultRequest'
+    BoulderResultDto:
+      type: object
+      properties:
+        boulderId:
+          type: integer
+        attempts:
+          type: integer
+        topped:
+          type: boolean
+        points:
+          type: integer
+    CompetitionUserStatusDto:
+      type: object
+      properties:
+        competitionId:
+          type: integer
+        status:
+          $ref: '#/components/schemas/CompetitionStatus'
+        dateFrom:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+        dateTo:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
+        resultsOpenUntil:
+          type: string
+          format: date-time
+          description: dateTo plus the grace period; results are rejected after this moment
+        section:
+          $ref: '#/components/schemas/CompetitionSection'
+        lastSnapshot:
+          type: integer
+        accepted:
+          type: boolean
+          description: False when the sent snapshot was older than the stored one and was ignored
+        totalPoints:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoulderResultDto'
+    CompetitionRankingEntryDto:
+      type: object
+      required:
+        - name
+        - section
+        - gender
+        - totalPoints
+        - totalAttempts
+        - flashTops
+      properties:
+        name:
+          type: string
+        section:
+          $ref: '#/components/schemas/CompetitionSection'
+        gender:
+          $ref: '#/components/schemas/Gender'
+        totalPoints:
+          type: integer
+        totalAttempts:
+          type: integer
+          description: Sum of attempts over all competition boulders
+        flashTops:
+          type: integer
+          description: Boulders topped on the first attempt

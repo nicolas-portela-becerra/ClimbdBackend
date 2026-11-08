@@ -1,7 +1,11 @@
 package com.climbingapp.infrastructure.entity;
 
+import com.climbingapp.infrastructure.entity.enums.Gender;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -11,7 +15,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "\"user\"")
@@ -45,9 +52,14 @@ public class UserEntity {
     @Column(name = "active")
     private boolean active;
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "gender", columnDefinition = "gender")
+    private Gender gender;
+
     @Column(name = "created_date", nullable = false)
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 
     @Column(name = "updated_date")
-    private LocalDateTime updatedDate;
+    private Instant updatedDate;
 }

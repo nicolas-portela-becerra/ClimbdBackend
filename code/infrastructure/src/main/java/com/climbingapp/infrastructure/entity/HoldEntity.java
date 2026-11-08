@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "\"hold\"")
@@ -41,8 +41,8 @@ public class HoldEntity {
     private Integer color;
 
     @Column(name = "created_date", nullable = false)
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 
     @Column(name = "updated_date")
-    private LocalDateTime updatedDate;
+    private Instant updatedDate;
 }

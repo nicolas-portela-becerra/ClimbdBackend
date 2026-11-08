@@ -196,6 +196,19 @@ http://localhost:8080
 
 ---
 
+## Dates & time zones
+
+A moment means the same thing whatever zone the client, the JVM, the database session or the host is in.
+
+* **Moments are absolute instants.** In Java they are `java.time.Instant`; in PostgreSQL they are `TIMESTAMPTZ`. There is no zone to compare, so no zone conversion logic exists in the services.
+* **Requests** carry RFC 3339 date-times with an offset or `Z` (e.g. `2026-11-20T19:00:00+01:00`). A value without an offset is rejected with a `400`.
+* **Responses** are always in UTC (`...Z`). Clients render the instant in whatever zone they want.
+* **Only the gym has a time zone** (`gym.time_zone`, an IANA region id such as `Europe/Madrid`, never a fixed offset). It answers "what local time / which calendar day is it at the gym", so clients build competition times from it.
+* **"Now" comes from one injected `Clock`** (`TimeConfig`). Use cases are the only place that stamp `createdDate` / `updatedDate`; controllers and mappers never call `now()`. Tests replace the clock with `Clock.fixed(...)`.
+* Nothing depends on `TimeZone.setDefault`. The Docker image still starts the JVM with `-Duser.timezone=UTC` so logs are deterministic, and Hibernate binds with `jdbc.time_zone: UTC`.
+
+---
+
 ## Database Migrations
 
 Database migrations are managed with Flyway.
