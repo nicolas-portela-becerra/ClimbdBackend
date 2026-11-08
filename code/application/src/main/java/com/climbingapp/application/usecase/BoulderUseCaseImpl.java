@@ -143,7 +143,7 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
                 updatedBoulder = updateBoulderDto(boulderDTO, currentBoulder);
                 log.debug("Boulder {} updated", currentBoulder.getId());
             } else if (!ObjectUtils.isEmpty(currentHolds) && holds.size() != currentHolds.size()) {
-                updateHoldsDto(holds, currentHolds);
+                updateHoldsDto(currentBoulder.getId(), holds);
                 updatedBoulder = currentBoulder;
                 log.debug("Holds updated for boulder: {}", currentBoulder.getId());
             } else {
@@ -157,15 +157,17 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
         }
     }
 
-    private void updateHoldsDto(List<HoldDTO> holds, List<HoldDTO> currentHolds) {
+    private void updateHoldsDto(int boulderId, List<HoldDTO> holds) {
         if (holds != null && !holds.isEmpty()) {
             Instant now = Instant.now(clock);
             holds.forEach(
                     hold -> {
+                        hold.setId(null);
+                        hold.setBoulderId(boulderId);
                         hold.setCreatedDate(now);
                         hold.setUpdatedDate(now);
                     });
-            holdRepository.deleteByBoulderId(currentHolds.getFirst().getBoulderId());
+            holdRepository.deleteByBoulderId(boulderId);
             holdRepository.saveAll(holds);
         }
     }
