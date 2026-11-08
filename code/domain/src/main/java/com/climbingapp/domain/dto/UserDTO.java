@@ -1,10 +1,12 @@
 package com.climbingapp.domain.dto;
 
+import com.climbingapp.infrastructure.entity.enums.Gender;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -25,7 +27,9 @@ public class UserDTO {
 
     private boolean active;
 
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 
-    private LocalDateTime updatedDate;
+    private Instant updatedDate;
+
+    private Gender gender;
 }

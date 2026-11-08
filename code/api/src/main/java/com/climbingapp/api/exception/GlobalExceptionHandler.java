@@ -1,6 +1,8 @@
 package com.climbingapp.api.exception;
 
 import com.climbingapp.api.dto.ErrorResponse;
+import com.climbingapp.domain.exception.ConflictException;
+import com.climbingapp.domain.exception.ForbiddenException;
 import com.climbingapp.domain.exception.NotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -74,6 +77,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN);
     }
 
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler({ConflictException.class})
+    public ResponseEntity<ErrorResponse> handleDomainConflictException(ConflictException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse().message(ex.getMessage()).status(HttpStatus.CONFLICT.value()),
+                HttpStatus.CONFLICT);
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler({ForbiddenException.class})
+    public ResponseEntity<ErrorResponse> handleDomainForbiddenException(ForbiddenException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse().message(ex.getMessage()).status(HttpStatus.FORBIDDEN.value()),
+                HttpStatus.FORBIDDEN);
+    }
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler({NotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException ex) {
@@ -89,6 +108,19 @@ public class GlobalExceptionHandler {
         log.warn("Bad request: {}", e.getMessage());
         return new ResponseEntity<>(
                 new ErrorResponse().message(e.getMessage()).status(HttpStatus.BAD_REQUEST.value()),
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({HttpMessageNotReadableException.class})
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
+        log.warn("Unreadable request body: {}", e.getMessage());
+        return new ResponseEntity<>(
+                new ErrorResponse()
+                        .message(
+                                "Malformed request body. Date-times must be RFC 3339 with an"
+                                        + " offset, e.g. 2026-11-20T19:00:00+01:00.")
+                        .status(HttpStatus.BAD_REQUEST.value()),
                 HttpStatus.BAD_REQUEST);
     }
 }

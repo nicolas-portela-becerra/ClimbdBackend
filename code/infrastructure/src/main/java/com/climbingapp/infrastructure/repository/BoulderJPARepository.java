@@ -16,5 +16,14 @@ public interface BoulderJPARepository extends JpaRepository<BoulderEntity, Integ
 
     List<BoulderEntity> findByWallImageId(Integer wallImageId);
 
+    List<BoulderEntity> findByCompetitionId(Integer competitionId);
+
+    Page<BoulderEntity> findByWallImageIdAndCompetitionIdIsNull(
+            Integer wallImageId, Pageable pageable);
+
+    Page<BoulderEntity> findByGymIdAndCompetitionIdIsNull(Integer gymId, Pageable pageable);
+
     boolean existsByIdAndCreatorId(Integer id, Integer creatorId);
+
+    boolean existsByWallImageId(Integer wallImageId);
 }

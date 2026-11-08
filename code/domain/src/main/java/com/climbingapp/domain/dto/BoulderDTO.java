@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -20,13 +20,17 @@ public class BoulderDTO {
 
     @EqualsAndHashCode.Exclude private Integer creatorId;
 
+    @EqualsAndHashCode.Exclude private Integer competitionId;
+
+    @EqualsAndHashCode.Exclude private Integer points;
+
     private String name;
 
     private String grade;
 
     private String description;
 
-    @EqualsAndHashCode.Exclude private LocalDateTime createdDate;
+    @EqualsAndHashCode.Exclude private Instant createdDate;
 
-    @EqualsAndHashCode.Exclude private LocalDateTime updatedDate;
+    @EqualsAndHashCode.Exclude private Instant updatedDate;
 }

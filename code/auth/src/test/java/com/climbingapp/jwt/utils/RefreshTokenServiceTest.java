@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -12,10 +15,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,6 +30,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,9 +55,19 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void issuePersistsTokenFamilyAndUserIndex() {
+    @SuppressWarnings("unchecked")
+    void issuePersistsTokenFamilyAndUserIndexInOneTransaction() {
         when(tokenManager.generateRefreshToken(eq(userDetails), any(), any()))
                 .thenReturn("signed-token");
+        // Run the callback against the mocked template, as Redis would on the bound connection
+        when(redisTemplate.executePipelined(any(SessionCallback.class)))
+                .thenAnswer(
+                        invocation -> {
+                            invocation
+                                    .<SessionCallback<Object>>getArgument(0)
+                                    .execute(redisTemplate);
+                            return List.of();
+                        });
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
         when(redisTemplate.opsForSet()).thenReturn(setOperations);
 
@@ -60,13 +76,20 @@ class RefreshTokenServiceTest {
         assertEquals("signed-token", token);
 
         ArgumentCaptor<String> tokenKey = ArgumentCaptor.forClass(String.class);
-        verify(hashOperations).put(tokenKey.capture(), eq("email"), eq("user@test.com"));
-        verify(hashOperations).put(eq(tokenKey.getValue()), eq("fam"), any());
-        verify(redisTemplate).expire(eq(tokenKey.getValue()), any(Duration.class));
-
+        ArgumentCaptor<Map<Object, Object>> fields = ArgumentCaptor.forClass(Map.class);
+        InOrder inOrder = inOrder(redisTemplate, hashOperations, setOperations);
+        inOrder.verify(redisTemplate).multi();
+        inOrder.verify(hashOperations).putAll(tokenKey.capture(), fields.capture());
+        inOrder.verify(redisTemplate).expire(eq(tokenKey.getValue()), any(Duration.class));
         // Family set and user index are maintained
-        verify(setOperations).add(org.mockito.ArgumentMatchers.startsWith("refresh_fam:"), any());
-        verify(setOperations).add(eq("refresh_user:user@test.com"), any());
+        inOrder.verify(setOperations).add(startsWith("refresh_fam:"), any());
+        inOrder.verify(setOperations).add(eq("refresh_user:user@test.com"), any());
+        inOrder.verify(redisTemplate).exec();
+
+        assertTrue(tokenKey.getValue().startsWith("refresh:"));
+        assertEquals("user@test.com", fields.getValue().get("email"));
+        assertTrue(fields.getValue().containsKey("fam"));
+        verify(redisTemplate, times(3)).expire(any(String.class), any(Duration.class));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.climbingapp.application.usecase;
 
 import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.BoulderResponseDTO;
+import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.mapper.BoulderMapper;
@@ -13,6 +14,7 @@ import com.climbingapp.domain.usecase.BoulderUseCase;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -35,13 +38,21 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
 
     @Autowired private BoulderMapper boulderMapper;
 
+    @Autowired private Clock clock;
+
     @Override
     @Transactional
     public BoulderDTO createBoulder(BoulderDTO boulderDTO, List<HoldDTO> holds) {
         try {
+            Instant now = Instant.now(clock);
+            boulderDTO.setCreatedDate(now);
             BoulderDTO savedBoulder = boulderRepository.save(boulderDTO);
             log.info("Boulder created: {}", savedBoulder);
-            holds.forEach(hold -> hold.setBoulderId(savedBoulder.getId()));
+            holds.forEach(
+                    hold -> {
+                        hold.setBoulderId(savedBoulder.getId());
+                        hold.setCreatedDate(now);
+                    });
             holdRepository.saveAll(holds);
             log.info(
                     "{} holds created for boulder with id: {}", holds.size(), savedBoulder.getId());
@@ -68,6 +79,19 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     @Override
+    @Cacheable(cacheNames = COMPETITION_BOULDERS_CACHE, key = "#competitionId", sync = true)
+    public List<CompetitionBoulderDTO> getCompetitionBoulders(int competitionId) {
+        return boulderRepository.findByCompetitionId(competitionId).stream()
+                .map(
+                        boulder ->
+                                new CompetitionBoulderDTO(
+                                        boulder,
+                                        holdRepository.findByBoulderIdOrderBySequenceOrder(
+                                                boulder.getId())))
+                .toList();
+    }
+
+    @Override
     public Page<BoulderDTO> getAllBoulders(int gymId, Pageable pageable) {
         try {
             return boulderRepository.findByGymId(gymId, pageable);
@@ -78,9 +102,23 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     @Override
+    public Page<BoulderDTO> getAllNonCompBoulders(int gymId, Pageable pageable) {
+        try {
+            return boulderRepository.findByGymIdWithoutCompetition(gymId, pageable);
+        } catch (Exception e) {
+            log.error(
+                    "Error retrieving non comp boulders for gym with id {}: {}",
+                    gymId,
+                    e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Page<BoulderResponseDTO> getBouldersByWallImage(int wallImageId, Pageable pageable) {
         try {
-            Page<BoulderDTO> page = boulderRepository.findByWallImageId(wallImageId, pageable);
+            Page<BoulderDTO> page =
+                    boulderRepository.findByWallImageIdWithoutCompetition(wallImageId, pageable);
             List<BoulderResponseDTO> boulderResponseDTOList = addCreatorToBoulder(page);
             return new PageImpl<>(boulderResponseDTOList, pageable, page.getTotalElements());
         } catch (Exception e) {
@@ -121,9 +159,10 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
 
     private void updateHoldsDto(List<HoldDTO> holds, List<HoldDTO> currentHolds) {
         if (holds != null && !holds.isEmpty()) {
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now(clock);
             holds.forEach(
                     hold -> {
+                        hold.setCreatedDate(now);
                         hold.setUpdatedDate(now);
                     });
             holdRepository.deleteByBoulderId(currentHolds.getFirst().getBoulderId());
@@ -135,7 +174,7 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
         currentBoulder.setName(newBoulder.getName());
         currentBoulder.setDescription(newBoulder.getDescription());
         currentBoulder.setGrade(newBoulder.getGrade());
-        currentBoulder.setUpdatedDate(LocalDateTime.now());
+        currentBoulder.setUpdatedDate(Instant.now(clock));
         return boulderRepository.save(currentBoulder);
     }
 

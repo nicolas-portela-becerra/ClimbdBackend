@@ -1,12 +1,15 @@
 package com.climbingapp.jwt.utils;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -29,17 +32,31 @@ public class RefreshTokenService {
         String token = tokenManager.generateRefreshToken(userDetails, jti, fam);
 
         String tokenKey = TOKEN_KEY_PREFIX + jti;
-        redisTemplate.opsForHash().put(tokenKey, "email", userDetails.getUsername());
-        redisTemplate.opsForHash().put(tokenKey, "fam", fam);
-        redisTemplate.expire(tokenKey, TOKEN_TTL);
-
         String familyKey = FAMILY_KEY_PREFIX + fam;
-        redisTemplate.opsForSet().add(familyKey, jti);
-        redisTemplate.expire(familyKey, TOKEN_TTL);
-
         String userKey = USER_KEY_PREFIX + userDetails.getUsername();
-        redisTemplate.opsForSet().add(userKey, fam);
-        redisTemplate.expire(userKey, TOKEN_TTL);
+
+        // Pipelined: the whole transaction is sent in a single round trip.
+        redisTemplate.executePipelined(
+                new SessionCallback<Object>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public <K, V> Object execute(RedisOperations<K, V> operations) {
+                        RedisOperations<String, String> ops =
+                                (RedisOperations<String, String>) operations;
+                        ops.multi();
+                        ops.opsForHash()
+                                .putAll(
+                                        tokenKey,
+                                        Map.of("email", userDetails.getUsername(), "fam", fam));
+                        ops.expire(tokenKey, TOKEN_TTL);
+                        ops.opsForSet().add(familyKey, jti);
+                        ops.expire(familyKey, TOKEN_TTL);
+                        ops.opsForSet().add(userKey, fam);
+                        ops.expire(userKey, TOKEN_TTL);
+                        ops.exec();
+                        return null;
+                    }
+                });
 
         return token;
     }

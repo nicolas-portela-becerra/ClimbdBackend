@@ -19,8 +19,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-
 @RestController
 public class GymController implements GymsApi {
 
@@ -94,7 +92,7 @@ public class GymController implements GymsApi {
         gym.setLocation(createGymRequest.getLocation());
         gym.setDescription(createGymRequest.getDescription());
         gym.setCreatorId(createGymRequest.getCreatedBy());
-        gym.setCreatedDate(LocalDateTime.now());
+        gym.setTimeZone(createGymRequest.getTimeZone());
         gym.setLogo(createGymRequest.getLogo());
         return gym;
     }
@@ -105,6 +103,7 @@ public class GymController implements GymsApi {
         gym.setDescription(updateGymRequest.getDescription());
         gym.setLocation(updateGymRequest.getLocation());
         gym.setName(updateGymRequest.getName());
+        gym.setTimeZone(updateGymRequest.getTimeZone());
         return gym;
     }
 }

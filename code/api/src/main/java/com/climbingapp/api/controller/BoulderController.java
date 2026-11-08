@@ -12,6 +12,7 @@ import com.climbingapp.domain.dto.BoulderDTO;
 import com.climbingapp.domain.dto.HoldDTO;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.dto.WallImageDTO;
+import com.climbingapp.domain.exception.ConflictException;
 import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.BoulderUseCase;
@@ -25,7 +26,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class BoulderController implements BouldersApi {
             @PathVariable("gymId") Integer gymId, Integer page, Integer size) {
         return ResponseEntity.ok(
                 mapper.toBoulderPage(
-                        boulderUseCase.getAllBoulders(gymId, PageRequest.of(page, size))));
+                        boulderUseCase.getAllNonCompBoulders(gymId, PageRequest.of(page, size))));
     }
 
     @Override
@@ -84,7 +84,6 @@ public class BoulderController implements BouldersApi {
             if (hold.getColor() == null) {
                 hold.setColor(i);
             }
-            hold.setCreatedDate(LocalDateTime.now());
             holds.add(hold);
         }
 
@@ -96,10 +95,11 @@ public class BoulderController implements BouldersApi {
     public ResponseEntity<BoulderDetailDto> getBoulderById(
             @PathVariable("boulderId") Integer boulderId) {
         BoulderDTO boulder = boulderUseCase.getBoulderById(boulderId);
-        UserDTO creator = userRepository.findById(boulder.getCreatorId());
-        if (boulder == null) {
+        // Competition boulders are only served by the competition endpoints
+        if (boulder == null || boulder.getCompetitionId() != null) {
             return ResponseEntity.notFound().build();
         }
+        UserDTO creator = userRepository.findById(boulder.getCreatorId());
         return ResponseEntity.ok(
                 mapper.toBoulderDetail(
                         boulder, boulderUseCase.getBoulderHolds(boulderId), creator));
@@ -110,6 +110,7 @@ public class BoulderController implements BouldersApi {
     public ResponseEntity<BoulderDto> updateBoulder(
             @PathVariable("boulderId") Integer boulderId,
             UpdateBoulderRequest updateBoulderRequest) {
+        rejectCompetitionBoulder(boulderId);
         BoulderDTO boulderDto = buildBoulder(boulderId, updateBoulderRequest);
         List<HoldDTO> holds =
                 new ArrayList<>(mapper.toDomainHoldDTOs(updateBoulderRequest.getHolds()));
@@ -128,8 +129,17 @@ public class BoulderController implements BouldersApi {
         if (boulderUseCase.getBoulderById(boulderId) == null) {
             return ResponseEntity.notFound().build();
         }
+        rejectCompetitionBoulder(boulderId);
         boulderUseCase.deleteBoulder(boulderId);
         return ResponseEntity.noContent().build();
+    }
+
+    private void rejectCompetitionBoulder(Integer boulderId) {
+        BoulderDTO boulder = boulderUseCase.getBoulderById(boulderId);
+        if (boulder != null && boulder.getCompetitionId() != null) {
+            throw new ConflictException(
+                    "Competition boulders must be managed through the competition endpoints.");
+        }
     }
 
     private BoulderDTO buildBoulder(Integer gymId, CreateBoulderRequest createBoulderRequest) {
@@ -140,7 +150,6 @@ public class BoulderController implements BouldersApi {
         boulder.setName(createBoulderRequest.getName());
         boulder.setGrade(createBoulderRequest.getGrade());
         boulder.setDescription(createBoulderRequest.getDescription());
-        boulder.setCreatedDate(LocalDateTime.now());
         return boulder;
     }
 
@@ -153,8 +162,6 @@ public class BoulderController implements BouldersApi {
         boulder.setCreatorId(updateBoulderRequest.getCreatorId());
         boulder.setWallImageId(updateBoulderRequest.getWallImageId());
         boulder.setGymId(updateBoulderRequest.getGymId());
-        boulder.setCreatedDate(LocalDateTime.now());
-        boulder.setUpdatedDate(LocalDateTime.now());
         return boulder;
     }
 }
