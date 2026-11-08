@@ -10,7 +10,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -19,6 +20,8 @@ public class UserUseCaseImpl implements UserUseCase {
     @Autowired private UserRepository userRepository;
 
     @Autowired private PasswordEncoder passwordEncoder;
+
+    @Autowired private Clock clock;
 
     @Override
     public UserDTO register(String name, String email, String rawPassword, Gender gender) {
@@ -50,7 +53,7 @@ public class UserUseCaseImpl implements UserUseCase {
         newUser.setName(name);
         newUser.setRole("USER");
         newUser.setProvider("LOCAL");
-        newUser.setCreatedDate(LocalDateTime.now());
+        newUser.setCreatedDate(Instant.now(clock));
         return newUser;
     }
 }

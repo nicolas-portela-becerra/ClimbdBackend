@@ -1,12 +1,15 @@
 package com.climbingapp.infrastructure.repository;
 
 import com.climbingapp.infrastructure.entity.CompetitionResultEntity;
+import com.climbingapp.infrastructure.view.CompetitionRankingView;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,4 +59,30 @@ public interface CompetitionResultJPARepository
             @Param("boulderIds") Integer[] boulderIds,
             @Param("attempts") Integer[] attempts,
             @Param("topped") Boolean[] topped);
+
+    @NativeQuery(
+            value =
+                    """
+        SELECT
+            u."name",
+            cp.section,
+            cp.gender,
+            SUM(cr.points) AS total_points,
+            SUM(cr.attempts) AS total_attempts,
+            COUNT(*) FILTER (WHERE cr.topped AND cr.attempts = 1) AS flash_tops
+        FROM {h-schema}competition c
+        INNER JOIN {h-schema}competition_participant cp
+            ON cp.competition_id = c.id
+        INNER JOIN {h-schema}competition_result cr
+            ON cr.competition_id = c.id
+            AND cr.participant_id = cp.id
+        INNER JOIN {h-schema}"user" u
+            ON u.id = cp.user_id
+        WHERE c.id = :competitionId
+            AND c.date_to + make_interval(mins => c.grace_minutes) < :now
+        GROUP BY u.id, u."name", cp.section, cp.gender
+        ORDER BY total_points DESC, flash_tops DESC, total_attempts ASC
+    """)
+    List<CompetitionRankingView> getFinalCompetitionResults(
+            @Param("competitionId") Integer competitionId, @Param("now") Timestamp now);
 }

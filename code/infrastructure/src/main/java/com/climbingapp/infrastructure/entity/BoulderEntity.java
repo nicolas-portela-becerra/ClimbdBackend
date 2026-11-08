@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "boulder")
@@ -49,8 +49,8 @@ public class BoulderEntity {
     private String description;
 
     @Column(name = "created_date", nullable = false)
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 
     @Column(name = "updated_date")
-    private LocalDateTime updatedDate;
+    private Instant updatedDate;
 }

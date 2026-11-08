@@ -22,7 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -37,13 +38,21 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
 
     @Autowired private BoulderMapper boulderMapper;
 
+    @Autowired private Clock clock;
+
     @Override
     @Transactional
     public BoulderDTO createBoulder(BoulderDTO boulderDTO, List<HoldDTO> holds) {
         try {
+            Instant now = Instant.now(clock);
+            boulderDTO.setCreatedDate(now);
             BoulderDTO savedBoulder = boulderRepository.save(boulderDTO);
             log.info("Boulder created: {}", savedBoulder);
-            holds.forEach(hold -> hold.setBoulderId(savedBoulder.getId()));
+            holds.forEach(
+                    hold -> {
+                        hold.setBoulderId(savedBoulder.getId());
+                        hold.setCreatedDate(now);
+                    });
             holdRepository.saveAll(holds);
             log.info(
                     "{} holds created for boulder with id: {}", holds.size(), savedBoulder.getId());
@@ -150,9 +159,10 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
 
     private void updateHoldsDto(List<HoldDTO> holds, List<HoldDTO> currentHolds) {
         if (holds != null && !holds.isEmpty()) {
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now(clock);
             holds.forEach(
                     hold -> {
+                        hold.setCreatedDate(now);
                         hold.setUpdatedDate(now);
                     });
             holdRepository.deleteByBoulderId(currentHolds.getFirst().getBoulderId());
@@ -164,7 +174,7 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
         currentBoulder.setName(newBoulder.getName());
         currentBoulder.setDescription(newBoulder.getDescription());
         currentBoulder.setGrade(newBoulder.getGrade());
-        currentBoulder.setUpdatedDate(LocalDateTime.now());
+        currentBoulder.setUpdatedDate(Instant.now(clock));
         return boulderRepository.save(currentBoulder);
     }
 

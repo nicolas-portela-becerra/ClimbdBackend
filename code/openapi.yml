@@ -799,7 +799,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Competitions that have not ended yet, ordered by start date
+          description: Competitions that have not ended yet or ended less than 12 hours ago
           content:
             application/json:
               schema:
@@ -1143,6 +1143,41 @@ paths:
           description: Competition not found or the user is not registered
       security:
         - bearerAuth: []
+  /api/competitions/{competitionId}/ranking:
+    get:
+      operationId: getCompetitionRanking
+      tags: [Competitions]
+      summary: Full ranking of a competition (admin or gym owner)
+      description: >-
+        One row per participant, with their section and gender so the frontend can filter it
+        into the four groups. Sorted by totalPoints, then flashTops, then totalAttempts.
+        A competition shows its complete data once dateTo plus its grace period have passed;
+        before that the list is empty.
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ranking list, empty while the competition is in its grace period or running
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetitionRankingEntryDto'
+        '403':
+          description: Only admins and the owner of the competition's gym can see the ranking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Competition not found
+      security:
+        - bearerAuth: []
 components:
   securitySchemes:
     bearerAuth:
@@ -1250,20 +1285,31 @@ components:
           nullable: true
         createdByAdminId:
           type: integer
+        timeZone:
+          type: string
+          example: Europe/Madrid
+          description: IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         createdDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         updatedDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
           nullable: true
     CreateGymRequest:
       type: object
       required:
         - name
+        - timeZone
       properties:
         name:
           type: string
+        timeZone:
+          type: string
+          example: Europe/Madrid
+          description: IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
           type: string
         description:
@@ -1279,6 +1325,10 @@ components:
       properties:
         name:
           type: string
+        timeZone:
+          type: string
+          example: Europe/Madrid
+          description: Optional. IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
           type: string
           nullable: true
@@ -1319,6 +1369,7 @@ components:
         uploadedDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         thumbnailUrl:
           type: string
     WallImageDetail:
@@ -1385,9 +1436,11 @@ components:
         createdDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         updatedDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
           nullable: true
     BoulderResponseDto:
       type: object
@@ -1570,6 +1623,7 @@ components:
         timestamp:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
     CompetitionType:
       type: string
       enum: [ALL_OR_NOTHING, X_ATTEMPTS]
@@ -1637,9 +1691,11 @@ components:
         dateFrom:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         dateTo:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         graceMinutes:
           type: integer
         basePoints:
@@ -1654,6 +1710,7 @@ components:
         createdDate:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
     CompetitionAnnouncementDto:
       type: object
       properties:
@@ -1666,9 +1723,11 @@ components:
         dateFrom:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         dateTo:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         status:
           $ref: '#/components/schemas/CompetitionStatus'
         registered:
@@ -1697,6 +1756,7 @@ components:
         registeredAt:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
     CompetitionBoulderRequest:
       type: object
       required:
@@ -1797,9 +1857,11 @@ components:
         dateFrom:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         dateTo:
           type: string
           format: date-time
+          description: RFC 3339 date-time. Requests must include an offset or Z (e.g. 2026-11-20T19:00:00+01:00); responses are always UTC (Z).
         resultsOpenUntil:
           type: string
           format: date-time
@@ -1817,3 +1879,27 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BoulderResultDto'
+    CompetitionRankingEntryDto:
+      type: object
+      required:
+        - name
+        - section
+        - gender
+        - totalPoints
+        - totalAttempts
+        - flashTops
+      properties:
+        name:
+          type: string
+        section:
+          $ref: '#/components/schemas/CompetitionSection'
+        gender:
+          $ref: '#/components/schemas/Gender'
+        totalPoints:
+          type: integer
+        totalAttempts:
+          type: integer
+          description: Sum of attempts over all competition boulders
+        flashTops:
+          type: integer
+          description: Boulders topped on the first attempt

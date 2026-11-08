@@ -16,7 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -28,6 +29,8 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
 
     @Autowired private ImageProcessorUseCase imageProcessorUseCase;
 
+    @Autowired private Clock clock;
+
     @Override
     public WallImageDTO uploadWallImage(WallImageDTO wallImageDTO) {
         try {
@@ -36,6 +39,7 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
             wallImageDTO.setThumbnail(
                     imageProcessorUseCase.createThumbnail(wallImageDTO.getImageData(), 300));
             wallImageDTO.setMimeType("image/jpeg");
+            wallImageDTO.setUploadedDate(Instant.now(clock));
             return wallImageRepository.save(wallImageDTO);
         } catch (IllegalArgumentException e) {
             log.error("Invalid wall image data: {}", e.getMessage());
@@ -59,7 +63,7 @@ public class WallImageUseCaseImpl implements WallImageUseCase {
             wallImage.setThumbnail(
                     imageProcessorUseCase.createThumbnail(wallImage.getImageData(), 300));
             wallImage.setMimeType("image/jpeg");
-            wallImage.setUploadedDate(LocalDateTime.now());
+            wallImage.setUploadedDate(Instant.now(clock));
         }
         return wallImageRepository.save(wallImage);
     }

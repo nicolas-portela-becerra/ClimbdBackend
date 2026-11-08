@@ -12,7 +12,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(
@@ -50,5 +50,5 @@ public class CompetitionParticipantEntity {
     private Integer lastSnapshot;
 
     @Column(name = "registered_at", nullable = false)
-    private LocalDateTime registeredAt;
+    private Instant registeredAt;
 }

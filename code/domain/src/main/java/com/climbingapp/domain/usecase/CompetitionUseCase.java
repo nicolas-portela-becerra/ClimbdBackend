@@ -5,6 +5,7 @@ import com.climbingapp.domain.dto.CompetitionAnnouncementDTO;
 import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.CompetitionDTO;
 import com.climbingapp.domain.dto.CompetitionParticipantDTO;
+import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 import com.climbingapp.domain.dto.CompetitionUserStatusDTO;
 import com.climbingapp.domain.dto.HoldDTO;
@@ -39,4 +40,6 @@ public interface CompetitionUseCase {
             int competitionId, BoulderDTO boulder, List<HoldDTO> holds);
 
     void deleteCompetitionBoulder(int competitionId, int boulderId);
+
+    List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId);
 }

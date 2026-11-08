@@ -10,6 +10,7 @@ import com.climbingapp.api.dto.CompetitionBoulderDto;
 import com.climbingapp.api.dto.CompetitionBoulderRequest;
 import com.climbingapp.api.dto.CompetitionDto;
 import com.climbingapp.api.dto.CompetitionParticipantDto;
+import com.climbingapp.api.dto.CompetitionRankingEntryDto;
 import com.climbingapp.api.dto.CompetitionRequest;
 import com.climbingapp.api.dto.CompetitionUserStatusDto;
 import com.climbingapp.api.dto.CreateHoldRequest;
@@ -26,6 +27,7 @@ import com.climbingapp.domain.dto.CompetitionAnnouncementDTO;
 import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.CompetitionDTO;
 import com.climbingapp.domain.dto.CompetitionParticipantDTO;
+import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 import com.climbingapp.domain.dto.CompetitionUserStatusDTO;
 import com.climbingapp.domain.dto.GymDTO;
@@ -40,7 +42,8 @@ import org.mapstruct.Named;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -75,8 +78,8 @@ public interface ApiDtoMapper {
     HoldDTO toDomainHold(CreateHoldRequest request);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdDate", expression = "java(java.time.LocalDateTime.now())")
-    @Mapping(target = "updatedDate", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "updatedDate", ignore = true)
     @Named("toDomainHoldDTO")
     HoldDTO toDomainHoldDTO(HoldDto holdDto);
 
@@ -153,20 +156,25 @@ public interface ApiDtoMapper {
     @Mapping(target = "lastSnapshot", source = "participant.lastSnapshot")
     CompetitionUserStatusDto toApiUserStatus(CompetitionUserStatusDTO dto);
 
+    List<CompetitionRankingEntryDto> toApiRanking(List<CompetitionRankingRecord> records);
+
     default OffsetDateTime toResultsOpenUntil(CompetitionDTO competition) {
         return competition == null
                 ? null
-                : toOffset(competition.getDateTo().plusMinutes(competition.getGraceMinutes()));
+                : toOffset(
+                        competition
+                                .getDateTo()
+                                .plus(Duration.ofMinutes(competition.getGraceMinutes())));
     }
 
-    default OffsetDateTime toOffset(LocalDateTime dateTime) {
-        return dateTime == null ? null : dateTime.atOffset(ZoneOffset.UTC);
+    /** Responses always carry UTC (Z); clients render the instant in their own zone. */
+    default OffsetDateTime toOffset(Instant instant) {
+        return instant == null ? null : instant.atOffset(ZoneOffset.UTC);
     }
 
-    default LocalDateTime toUtc(OffsetDateTime dateTime) {
-        return dateTime == null
-                ? null
-                : dateTime.withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
+    /** Requests may carry any offset; it is dropped once the absolute instant is known. */
+    default Instant toInstant(OffsetDateTime dateTime) {
+        return dateTime == null ? null : dateTime.toInstant();
     }
 
     default BigDecimal toBigDecimal(Float value) {

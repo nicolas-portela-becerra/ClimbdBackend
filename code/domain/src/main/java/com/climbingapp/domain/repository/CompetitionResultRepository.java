@@ -1,7 +1,9 @@
 package com.climbingapp.domain.repository;
 
+import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface CompetitionResultRepository {
@@ -21,4 +23,6 @@ public interface CompetitionResultRepository {
     CompetitionResultDTO save(CompetitionResultDTO result);
 
     void deleteById(Integer id);
+
+    List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId, Timestamp now);
 }

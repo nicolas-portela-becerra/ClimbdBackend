@@ -1,14 +1,18 @@
 package com.climbingapp.application.repository;
 
+import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 import com.climbingapp.domain.mapper.CompetitionResultMapper;
 import com.climbingapp.domain.repository.CompetitionResultRepository;
 import com.climbingapp.infrastructure.entity.CompetitionResultEntity;
 import com.climbingapp.infrastructure.repository.CompetitionResultJPARepository;
+import com.climbingapp.infrastructure.view.CompetitionRankingView;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.List;
 
 @Repository
@@ -65,5 +69,22 @@ public class CompetitionResultRepositoryImpl implements CompetitionResultReposit
     @Override
     public void deleteById(Integer id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId, Timestamp now) {
+        List<CompetitionRankingView> ranking =
+                jpaRepository.getFinalCompetitionResults(competitionId, now);
+        return ranking.stream()
+                .map(
+                        row ->
+                                new CompetitionRankingRecord(
+                                        row.getName(),
+                                        row.getSection(),
+                                        row.getGender(),
+                                        row.getTotalPoints(),
+                                        row.getTotalAttempts(),
+                                        row.getFlashTops()))
+                .toList();
     }
 }

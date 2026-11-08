@@ -26,7 +26,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,7 +84,6 @@ public class BoulderController implements BouldersApi {
             if (hold.getColor() == null) {
                 hold.setColor(i);
             }
-            hold.setCreatedDate(LocalDateTime.now());
             holds.add(hold);
         }
 
@@ -152,7 +150,6 @@ public class BoulderController implements BouldersApi {
         boulder.setName(createBoulderRequest.getName());
         boulder.setGrade(createBoulderRequest.getGrade());
         boulder.setDescription(createBoulderRequest.getDescription());
-        boulder.setCreatedDate(LocalDateTime.now());
         return boulder;
     }
 
@@ -165,8 +162,6 @@ public class BoulderController implements BouldersApi {
         boulder.setCreatorId(updateBoulderRequest.getCreatorId());
         boulder.setWallImageId(updateBoulderRequest.getWallImageId());
         boulder.setGymId(updateBoulderRequest.getGymId());
-        boulder.setCreatedDate(LocalDateTime.now());
-        boulder.setUpdatedDate(LocalDateTime.now());
         return boulder;
     }
 }

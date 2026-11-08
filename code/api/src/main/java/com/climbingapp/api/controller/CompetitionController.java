@@ -5,6 +5,7 @@ import com.climbingapp.api.dto.CompetitionBoulderDto;
 import com.climbingapp.api.dto.CompetitionBoulderRequest;
 import com.climbingapp.api.dto.CompetitionDto;
 import com.climbingapp.api.dto.CompetitionParticipantDto;
+import com.climbingapp.api.dto.CompetitionRankingEntryDto;
 import com.climbingapp.api.dto.CompetitionRegistrationRequest;
 import com.climbingapp.api.dto.CompetitionRequest;
 import com.climbingapp.api.dto.CompetitionUserStatusDto;
@@ -88,6 +89,15 @@ public class CompetitionController implements CompetitionsApi {
             @PathVariable("competitionId") Integer competitionId) {
         competitionUseCase.unregister(competitionId, getCurrentUser().getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PreAuthorize(
+            "hasRole('ADMIN') or @competitionSecurity.isOwner(#competitionId, authentication)")
+    public ResponseEntity<List<CompetitionRankingEntryDto>> getCompetitionRanking(
+            @PathVariable("competitionId") Integer competitionId) {
+        return ResponseEntity.ok(
+                mapper.toApiRanking(competitionUseCase.getCompetitionRanking(competitionId)));
     }
 
     @Override

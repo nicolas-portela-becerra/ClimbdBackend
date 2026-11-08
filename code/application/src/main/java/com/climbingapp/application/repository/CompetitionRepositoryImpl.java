@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -48,8 +48,8 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     }
 
     @Override
-    public List<CompetitionDTO> findNotEndedByGymId(Integer gymId, LocalDateTime now) {
+    public List<CompetitionDTO> findNotEndedByGymId(Integer gymId, Instant endedAfter) {
         return mapper.toDtoList(
-                jpaRepository.findByGymIdAndDateToAfterOrderByDateFromAsc(gymId, now));
+                jpaRepository.findByGymIdAndDateToAfterOrderByDateFromAsc(gymId, endedAfter));
     }
 }

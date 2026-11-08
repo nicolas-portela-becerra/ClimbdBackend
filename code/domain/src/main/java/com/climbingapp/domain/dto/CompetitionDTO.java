@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -29,9 +29,9 @@ public class CompetitionDTO {
 
     private Integer minPoints;
 
-    private LocalDateTime dateFrom;
+    private Instant dateFrom;
 
-    private LocalDateTime dateTo;
+    private Instant dateTo;
 
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 }

@@ -5,6 +5,7 @@ import com.climbingapp.domain.dto.CompetitionAnnouncementDTO;
 import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.CompetitionDTO;
 import com.climbingapp.domain.dto.CompetitionParticipantDTO;
+import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 import com.climbingapp.domain.dto.CompetitionStatus;
 import com.climbingapp.domain.dto.CompetitionUserStatusDTO;
@@ -36,7 +37,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,11 +52,18 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
 
     private static final int DEFAULT_GRACE_MINUTES = 5;
 
-    private static final int BOULDERS_VISIBLE_HOURS_AFTER_END = 24;
+    private static final Duration BOULDERS_VISIBLE_AFTER_END = Duration.ofHours(24);
+
+    /** How long an ended competition keeps appearing in the gym announcements. */
+    private static final Duration ANNOUNCED_AFTER_END = Duration.ofHours(12);
+
+    @Autowired private Clock clock;
 
     @Autowired private CompetitionRepository competitionRepository;
 
     @Autowired private CompetitionParticipantRepository participantRepository;
+
+    @Autowired private CompetitionResultRepository competitionResultRepository;
 
     @Autowired private BoulderRepository boulderRepository;
 
@@ -79,7 +90,7 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
         validateCompetition(competition);
         competition.setId(null);
         competition.setGymId(gymId);
-        competition.setCreatedDate(LocalDateTime.now());
+        competition.setCreatedDate(Instant.now(clock));
         CompetitionDTO saved = competitionRepository.save(competition);
         log.info("Competition {} created for gym {}", saved.getId(), gymId);
         return saved;
@@ -108,8 +119,10 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
 
     @Override
     public List<CompetitionAnnouncementDTO> getActiveCompetitions(int gymId, int userId) {
-        LocalDateTime now = LocalDateTime.now();
-        return competitionRepository.findNotEndedByGymId(gymId, now).stream()
+        Instant now = Instant.now(clock);
+        return competitionRepository
+                .findNotEndedByGymId(gymId, now.minus(ANNOUNCED_AFTER_END))
+                .stream()
                 .map(
                         competition ->
                                 new CompetitionAnnouncementDTO(
@@ -140,16 +153,21 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
             throw new ConflictException("You are already registered for this competition.");
         }
 
+        CompetitionParticipantDTO saved = getSaved(competitionId, userId, section, user);
+        log.info("User {} registered for competition {}", userId, competitionId);
+        return saved;
+    }
+
+    private CompetitionParticipantDTO getSaved(
+            int competitionId, int userId, CompetitionSection section, UserDTO user) {
         CompetitionParticipantDTO participant = new CompetitionParticipantDTO();
         participant.setCompetitionId(competitionId);
         participant.setUserId(userId);
         participant.setSection(section);
         participant.setGender(user.getGender());
         participant.setLastSnapshot(0);
-        participant.setRegisteredAt(LocalDateTime.now());
-        CompetitionParticipantDTO saved = participantRepository.save(participant);
-        log.info("User {} registered for competition {}", userId, competitionId);
-        return saved;
+        participant.setRegisteredAt(Instant.now(clock));
+        return participantRepository.save(participant);
     }
 
     @Override
@@ -175,12 +193,12 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
                                 competition.getGymId(), userId);
 
         if (!canManage) {
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now(clock);
             if (now.isBefore(competition.getDateFrom())) {
                 throw new ForbiddenException(
                         "Boulders will be visible when the competition starts.");
             }
-            if (now.isAfter(competition.getDateTo().plusHours(BOULDERS_VISIBLE_HOURS_AFTER_END))) {
+            if (now.isAfter(competition.getDateTo().plus(BOULDERS_VISIBLE_AFTER_END))) {
                 throw new ForbiddenException(
                         "The boulders of this competition are no longer available.");
             }
@@ -194,11 +212,12 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
     public CompetitionUserStatusDTO submitResults(
             int competitionId, int userId, int snapshot, List<CompetitionResultDTO> results) {
         CompetitionDTO competition = getCompetition(competitionId);
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now(clock);
         if (now.isBefore(competition.getDateFrom())) {
             throw new ConflictException("The competition has not started yet.");
         }
-        if (now.isAfter(competition.getDateTo().plusMinutes(competition.getGraceMinutes()))) {
+        if (now.isAfter(
+                competition.getDateTo().plus(Duration.ofMinutes(competition.getGraceMinutes())))) {
             throw new ConflictException("The competition is closed, results can't be sent.");
         }
         CompetitionParticipantDTO participant =
@@ -245,6 +264,69 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
         return status;
     }
 
+    @Override
+    @CacheEvict(cacheNames = BoulderUseCase.COMPETITION_BOULDERS_CACHE, key = "#competitionId")
+    @Transactional
+    public CompetitionBoulderDTO createCompetitionBoulder(
+            int competitionId, BoulderDTO boulder, List<HoldDTO> holds) {
+        CompetitionDTO competition = getNotStartedCompetition(competitionId);
+        validateCompetitionBoulder(competition, boulder, holds);
+
+        Instant now = Instant.now(clock);
+        boulder.setId(null);
+        boulder.setGymId(competition.getGymId());
+        boulder.setCompetitionId(competitionId);
+        boulder.setCreatedDate(now);
+        BoulderDTO saved = boulderRepository.save(boulder);
+        List<HoldDTO> savedHolds = saveHolds(saved.getId(), holds, now);
+
+        log.info("Boulder {} created for competition {}", saved.getId(), competitionId);
+        return new CompetitionBoulderDTO(saved, savedHolds);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = BoulderUseCase.COMPETITION_BOULDERS_CACHE, key = "#competitionId")
+    @Transactional
+    public CompetitionBoulderDTO updateCompetitionBoulder(
+            int competitionId, BoulderDTO boulder, List<HoldDTO> holds) {
+        CompetitionDTO competition = getNotStartedCompetition(competitionId);
+        BoulderDTO current = getCompetitionBoulder(competitionId, boulder.getId());
+        validateCompetitionBoulder(competition, boulder, holds);
+
+        Instant now = Instant.now(clock);
+        current.setWallImageId(boulder.getWallImageId());
+        current.setName(boulder.getName());
+        current.setGrade(boulder.getGrade());
+        current.setDescription(boulder.getDescription());
+        current.setPoints(boulder.getPoints());
+        current.setUpdatedDate(now);
+        BoulderDTO saved = boulderRepository.save(current);
+
+        holdRepository.deleteByBoulderId(saved.getId());
+        List<HoldDTO> savedHolds = saveHolds(saved.getId(), holds, now);
+
+        log.info("Boulder {} of competition {} updated", saved.getId(), competitionId);
+        return new CompetitionBoulderDTO(saved, savedHolds);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = BoulderUseCase.COMPETITION_BOULDERS_CACHE, key = "#competitionId")
+    @Transactional
+    public void deleteCompetitionBoulder(int competitionId, int boulderId) {
+        getNotStartedCompetition(competitionId);
+        getCompetitionBoulder(competitionId, boulderId);
+        holdRepository.deleteByBoulderId(boulderId);
+        boulderRepository.deleteById(boulderId);
+        log.info("Boulder {} of competition {} deleted", boulderId, competitionId);
+    }
+
+    @Override
+    public List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId) {
+        getCompetition(competitionId);
+        Instant now = Instant.now(clock);
+        return competitionResultRepository.getCompetitionRanking(competitionId, Timestamp.from(now));
+    }
+
     private void validateResults(int competitionId, List<CompetitionResultDTO> results) {
         if (results == null) {
             throw new IllegalArgumentException("Results are required.");
@@ -283,79 +365,23 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
                         .sum();
         CompetitionUserStatusDTO status = new CompetitionUserStatusDTO();
         status.setCompetition(competition);
-        status.setStatus(statusOf(competition, LocalDateTime.now()));
+        status.setStatus(statusOf(competition, Instant.now(clock)));
         status.setParticipant(participant);
         status.setResults(results);
         status.setTotalPoints(totalPoints);
         return status;
     }
 
-    private static CompetitionStatus statusOf(CompetitionDTO competition, LocalDateTime now) {
+    private static CompetitionStatus statusOf(CompetitionDTO competition, Instant now) {
         if (now.isBefore(competition.getDateFrom())) {
             return CompetitionStatus.UPCOMING;
         }
-        return now.isAfter(competition.getDateTo())
-                ? CompetitionStatus.ENDED
-                : CompetitionStatus.RUNNING;
+        return now.isBefore(competition.getDateTo())
+                ? CompetitionStatus.RUNNING
+                : CompetitionStatus.ENDED;
     }
 
-    @Override
-    @CacheEvict(cacheNames = BoulderUseCase.COMPETITION_BOULDERS_CACHE, key = "#competitionId")
-    @Transactional
-    public CompetitionBoulderDTO createCompetitionBoulder(
-            int competitionId, BoulderDTO boulder, List<HoldDTO> holds) {
-        CompetitionDTO competition = getNotStartedCompetition(competitionId);
-        validateCompetitionBoulder(competition, boulder, holds);
-
-        LocalDateTime now = LocalDateTime.now();
-        boulder.setId(null);
-        boulder.setGymId(competition.getGymId());
-        boulder.setCompetitionId(competitionId);
-        boulder.setCreatedDate(now);
-        BoulderDTO saved = boulderRepository.save(boulder);
-        List<HoldDTO> savedHolds = saveHolds(saved.getId(), holds, now);
-
-        log.info("Boulder {} created for competition {}", saved.getId(), competitionId);
-        return new CompetitionBoulderDTO(saved, savedHolds);
-    }
-
-    @Override
-    @CacheEvict(cacheNames = BoulderUseCase.COMPETITION_BOULDERS_CACHE, key = "#competitionId")
-    @Transactional
-    public CompetitionBoulderDTO updateCompetitionBoulder(
-            int competitionId, BoulderDTO boulder, List<HoldDTO> holds) {
-        CompetitionDTO competition = getNotStartedCompetition(competitionId);
-        BoulderDTO current = getCompetitionBoulder(competitionId, boulder.getId());
-        validateCompetitionBoulder(competition, boulder, holds);
-
-        LocalDateTime now = LocalDateTime.now();
-        current.setWallImageId(boulder.getWallImageId());
-        current.setName(boulder.getName());
-        current.setGrade(boulder.getGrade());
-        current.setDescription(boulder.getDescription());
-        current.setPoints(boulder.getPoints());
-        current.setUpdatedDate(now);
-        BoulderDTO saved = boulderRepository.save(current);
-
-        holdRepository.deleteByBoulderId(saved.getId());
-        List<HoldDTO> savedHolds = saveHolds(saved.getId(), holds, now);
-
-        log.info("Boulder {} of competition {} updated", saved.getId(), competitionId);
-        return new CompetitionBoulderDTO(saved, savedHolds);
-    }
-
-    @Override
-    @CacheEvict(cacheNames = BoulderUseCase.COMPETITION_BOULDERS_CACHE, key = "#competitionId")
-    @Transactional
-    public void deleteCompetitionBoulder(int competitionId, int boulderId) {
-        getNotStartedCompetition(competitionId);
-        getCompetitionBoulder(competitionId, boulderId);
-        holdRepository.deleteByBoulderId(boulderId);
-        boulderRepository.deleteById(boulderId);
-        log.info("Boulder {} of competition {} deleted", boulderId, competitionId);
-    }
-
-    private List<HoldDTO> saveHolds(Integer boulderId, List<HoldDTO> holds, LocalDateTime now) {
+    private List<HoldDTO> saveHolds(Integer boulderId, List<HoldDTO> holds, Instant now) {
         holds.forEach(
                 hold -> {
                     hold.setId(null);
@@ -377,7 +403,7 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
 
     private CompetitionDTO getNotStartedCompetition(int competitionId) {
         CompetitionDTO competition = getCompetition(competitionId);
-        if (!LocalDateTime.now().isBefore(competition.getDateFrom())) {
+        if (!Instant.now(clock).isBefore(competition.getDateFrom())) {
             throw new ConflictException("The competition has already started.");
         }
         return competition;
@@ -405,7 +431,7 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
         if (!competition.getDateTo().isAfter(competition.getDateFrom())) {
             throw new IllegalArgumentException("The end date must be after the start date.");
         }
-        if (!competition.getDateFrom().isAfter(LocalDateTime.now())) {
+        if (!competition.getDateFrom().isAfter(Instant.now(clock))) {
             throw new IllegalArgumentException("The start date must be in the future.");
         }
         if (competition.getGraceMinutes() == null) {

@@ -5,8 +5,9 @@ import com.climbingapp.infrastructure.entity.CompetitionEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public interface CompetitionJPARepository extends JpaRepository<CompetitionEntity, Integer> {
@@ -15,6 +16,13 @@ public interface CompetitionJPARepository extends JpaRepository<CompetitionEntit
 
     boolean existsByIdAndGymId(Integer id, Integer gymId);
 
+    @Query(
+            """
+        SELECT c FROM CompetitionEntity c
+        WHERE c.gymId = :gymId
+        AND c.dateTo > :threshold
+        ORDER BY c.dateFrom ASC
+    """)
     List<CompetitionEntity> findByGymIdAndDateToAfterOrderByDateFromAsc(
-            Integer gymId, LocalDateTime now);
+            Integer gymId, Instant threshold);
 }

@@ -11,7 +11,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "competition", uniqueConstraints = @UniqueConstraint(columnNames = {"id", "gym_id"}))
@@ -48,11 +48,11 @@ public class CompetitionEntity {
     private Integer minPoints;
 
     @Column(name = "date_from", nullable = false)
-    private LocalDateTime dateFrom;
+    private Instant dateFrom;
 
     @Column(name = "date_to", nullable = false)
-    private LocalDateTime dateTo;
+    private Instant dateTo;
 
     @Column(name = "created_date", nullable = false)
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 }

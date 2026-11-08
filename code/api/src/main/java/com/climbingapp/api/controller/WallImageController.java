@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Set;
 
 @RestController
@@ -147,7 +146,6 @@ public class WallImageController implements WallImagesApi {
         wallImage.setThumbnail(new byte[0]);
         wallImage.setMimeType(image.getContentType());
         wallImage.setUploadedBy(uploadedBy);
-        wallImage.setUploadedDate(LocalDateTime.now());
         return wallImage;
     }
 
