@@ -39,3 +39,5 @@ spring:
     default-schema: ${SPRING_DATASOURCE_USERNAME}
 server:
   port: 8080
+  # Honour X-Forwarded-For only from internal proxy IPs (Tomcat RemoteIpValve default).
+  forward-headers-strategy: native
