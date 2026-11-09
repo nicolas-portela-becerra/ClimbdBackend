@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -47,8 +48,10 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(username);
-            if (userDetails.isEnabled() && tokenManager.validateAccessToken(token, userDetails)) {
+            UserDetails userDetails = loadUser(username);
+            if (userDetails != null
+                    && userDetails.isEnabled()
+                    && tokenManager.validateAccessToken(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
@@ -58,5 +61,15 @@ public class JwtFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    /** A valid token for a deleted user must end as 401 (entry point) */
+    private UserDetails loadUser(String username) {
+        try {
+            return jwtUserDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
+            log.debug("JWT subject no longer exists");
+            return null;
+        }
     }
 }

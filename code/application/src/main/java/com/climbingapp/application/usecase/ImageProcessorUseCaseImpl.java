@@ -3,8 +3,6 @@ package com.climbingapp.application.usecase;
 import com.climbingapp.domain.usecase.ImageProcessorUseCase;
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.ScaleMethod;
-import com.sksamuel.scrimage.metadata.ImageMetadata;
-import com.sksamuel.scrimage.metadata.Tag;
 import com.sksamuel.scrimage.nio.ImageWriter;
 import com.sksamuel.scrimage.nio.JpegWriter;
 import com.sksamuel.scrimage.nio.PngWriter;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
@@ -37,16 +34,6 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
         }
         // Read the image
         ImmutableImage source = readBytes(imageData);
-
-        // Get the type of the image
-        int imageType = source.getType();
-        log.info("Image type: {}", imageType);
-
-        // Get image metadata
-        ImageMetadata metadata = source.getMetadata();
-        Tag[] tags = metadata.tags();
-        log.info("Image metadata: {}", metadata);
-        log.info("Image tags: {}", Arrays.toString(tags));
 
         // Scale image to different dimensions
         double scale = Math.min(1.0, (double) maxPx / Math.max(source.width, source.height));

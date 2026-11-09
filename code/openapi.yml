@@ -1299,6 +1299,7 @@ components:
           type: string
           format: email
         name:
+          maxLength: 255
           type: string
         password:
           type: string
@@ -1464,14 +1465,17 @@ components:
         - timeZone
       properties:
         name:
+          maxLength: 255
           type: string
         timeZone:
           type: string
           example: Europe/Madrid
           description: IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
+          maxLength: 255
           type: string
         description:
+          maxLength: 2000
           type: string
         logo:
           type: string
@@ -1482,15 +1486,18 @@ components:
       type: object
       properties:
         name:
+          maxLength: 255
           type: string
         timeZone:
           type: string
           example: Europe/Madrid
           description: Optional. IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
+          maxLength: 255
           type: string
           nullable: true
         description:
+          maxLength: 2000
           type: string
           nullable: true
         logo:
@@ -1628,15 +1635,19 @@ components:
         - holds
       properties:
         name:
+          maxLength: 255
           type: string
         grade:
+          maxLength: 10
           type: string
           description: Fontainebleau grade (e.g. 6A+, 7B)
         description:
+          maxLength: 2000
           type: string
         wallImageId:
           type: integer
         holds:
+          maxItems: 200
           type: array
           minItems: 1
           items:
@@ -1645,15 +1656,19 @@ components:
       type: object
       properties:
         name:
+          maxLength: 255
           type: string
         grade:
+          maxLength: 10
           type: string
         description:
+          maxLength: 2000
           type: string
           nullable: true
         wallImageId:
           type: integer
         holds:
+          maxItems: 200
           type: array
           items:
             $ref: '#/components/schemas/HoldDto'
@@ -1691,12 +1706,18 @@ components:
         coordX:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
         coordY:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
         radiusRatio:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
         color:
           type: integer
           nullable: true
@@ -1789,6 +1810,7 @@ components:
         - dateTo
       properties:
         name:
+          maxLength: 255
           type: string
         type:
           $ref: '#/components/schemas/CompetitionType'
@@ -1909,11 +1931,14 @@ components:
         - holds
       properties:
         name:
+          maxLength: 255
           type: string
         grade:
+          maxLength: 10
           type: string
           description: Fontainebleau grade (e.g. 6A+, 7B)
         description:
+          maxLength: 2000
           type: string
           nullable: true
         wallImageId:
@@ -1924,6 +1949,7 @@ components:
           nullable: true
           description: Required for ALL_OR_NOTHING competitions, must be empty for X_ATTEMPTS
         holds:
+          maxItems: 200
           type: array
           minItems: 1
           items:
