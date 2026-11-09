@@ -206,7 +206,10 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
                         .stream()
                         .collect(Collectors.toMap(UserDTO::getId, Function.identity()));
         return boulders.getContent().stream()
-                .map(boulder -> boulderMapper.toResponseDTO(boulder, creators.get(boulder.getCreatorId())))
+                .map(
+                        boulder ->
+                                boulderMapper.toResponseDTO(
+                                        boulder, creators.get(boulder.getCreatorId())))
                 .toList();
     }
 }

@@ -13,12 +13,22 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 @Slf4j
 @Service
 public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
+
+    static final int MAX_SIDE_PX = 8000;
+
+    static final long MAX_PIXELS = 40000000L;
 
     @Override
     public byte[] compress(byte[] imageData, int maxPx) {
@@ -91,10 +101,41 @@ public class ImageProcessorUseCaseImpl implements ImageProcessorUseCase {
     }
 
     private ImmutableImage readBytes(byte[] imageData) {
+        checkDimensions(imageData);
         try {
             return ImmutableImage.loader().fromBytes(imageData);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Reads only the image header so a small file declaring a huge raster (decompression bomb) is
+     * rejected before the pixels are decoded into memory.
+     */
+    static void checkDimensions(byte[] imageData) {
+        try (ImageInputStream in =
+                ImageIO.createImageInputStream(new ByteArrayInputStream(imageData))) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                throw new IllegalArgumentException("Unsupported image format");
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(in, true, true);
+                int width = reader.getWidth(0);
+                int height = reader.getHeight(0);
+                if (width > MAX_SIDE_PX
+                        || height > MAX_SIDE_PX
+                        || (long) width * height > MAX_PIXELS) {
+                    throw new IllegalArgumentException(
+                            "Image dimensions " + width + "x" + height + " exceed the limit");
+                }
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unreadable image", e);
         }
     }
 }
