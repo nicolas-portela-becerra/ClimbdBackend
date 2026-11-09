@@ -61,6 +61,8 @@ public class WallImageController implements WallImagesApi {
         try {
             WallImageDTO wallImage = buildImage(gymId, image, wallName);
             wallImageUseCase.uploadWallImage(wallImage);
+        } catch (IllegalArgumentException e) {
+            throw e; // rejected image (e.g. too many pixels) -> 400
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

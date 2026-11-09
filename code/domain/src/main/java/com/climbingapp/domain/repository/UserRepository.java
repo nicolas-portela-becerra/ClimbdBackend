@@ -3,6 +3,7 @@ package com.climbingapp.domain.repository;
 import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface UserRepository {
@@ -16,6 +17,8 @@ public interface UserRepository {
     UserDTO saveWithPassword(UserDTO user, String passwordHash);
 
     UserDTO findById(int userId);
+
+    List<UserDTO> findAllById(Collection<Integer> userIds);
 
     void activateUsers(List<Integer> userId);
 

@@ -33,6 +33,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final Duration REFILL_PERIOD = Duration.ofMinutes(1);
 
+    static final int MAX_TRACKED_CLIENTS = 1000;
+
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -47,7 +49,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String clientKey = resolveClientKey(request);
+        // Real client IP; behind a proxy Tomcat resolves it (server.forward-headers-strategy).
+        String clientKey = request.getRemoteAddr();
+        if (buckets.size() > MAX_TRACKED_CLIENTS) {
+            // A full bucket has been idle for a whole refill period, same as a new one.
+            buckets.values().removeIf(b -> b.getAvailableTokens() >= CAPACITY);
+        }
         Bucket bucket = buckets.computeIfAbsent(clientKey, key -> newBucket());
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
@@ -67,13 +74,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return Bucket.builder()
                 .addLimit(limit -> limit.capacity(CAPACITY).refillGreedy(CAPACITY, REFILL_PERIOD))
                 .build();
-    }
-
-    private String resolveClientKey(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

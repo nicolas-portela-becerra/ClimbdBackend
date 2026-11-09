@@ -62,6 +62,61 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void spoofedForwardedForDoesNotGrantFreshBuckets() throws Exception {
+        FilterChain chain = mock(FilterChain.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        for (int i = 0; i < 11; i++) {
+            HttpServletRequest request = requestFor("10.0.0.1");
+            org.mockito.Mockito.lenient()
+                    .when(request.getHeader("X-Forwarded-For"))
+                    .thenReturn("1.2.3." + i);
+            filter.doFilterInternal(request, response, chain);
+        }
+
+        verify(chain, times(10))
+                .doFilter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        verify(response).setStatus(429);
+    }
+
+    @Test
+    void idleBucketsArePrunedOnceTrackingLimitIsExceeded() throws Exception {
+        FilterChain chain = mock(FilterChain.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        // Exhaust one client so its bucket is not idle and must survive pruning.
+        for (int i = 0; i < 11; i++) {
+            filter.doFilterInternal(requestFor("10.0.0.1"), response, chain);
+        }
+        java.util.Map<?, ?> buckets =
+                (java.util.Map<?, ?>)
+                        org.springframework.test.util.ReflectionTestUtils.getField(
+                                filter, "buckets");
+        // Simulate many idle clients (full buckets) without 10k mocked requests.
+        for (int i = 0; i <= RateLimitFilter.MAX_TRACKED_CLIENTS; i++) {
+            ((java.util.Map<String, Object>) buckets)
+                    .put(
+                            "idle-" + i,
+                            io.github.bucket4j.Bucket.builder()
+                                    .addLimit(
+                                            l ->
+                                                    l.capacity(10)
+                                                            .refillGreedy(
+                                                                    10,
+                                                                    java.time.Duration.ofMinutes(
+                                                                            1)))
+                                    .build());
+        }
+
+        filter.doFilterInternal(requestFor("10.0.0.2"), response, chain);
+
+        assertTrue(buckets.size() <= 2, "idle buckets should be pruned, size=" + buckets.size());
+        assertTrue(buckets.containsKey("10.0.0.1"), "active bucket must keep its state");
+    }
+
+    @Test
     void doesNotFilterNonAuthEndpoints() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getMethod()).thenReturn("POST");

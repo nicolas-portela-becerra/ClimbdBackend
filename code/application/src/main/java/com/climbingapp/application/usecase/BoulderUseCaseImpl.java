@@ -25,6 +25,9 @@ import org.springframework.util.ObjectUtils;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -143,7 +146,7 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
                 updatedBoulder = updateBoulderDto(boulderDTO, currentBoulder);
                 log.debug("Boulder {} updated", currentBoulder.getId());
             } else if (!ObjectUtils.isEmpty(currentHolds) && holds.size() != currentHolds.size()) {
-                updateHoldsDto(holds, currentHolds);
+                updateHoldsDto(currentBoulder.getId(), holds);
                 updatedBoulder = currentBoulder;
                 log.debug("Holds updated for boulder: {}", currentBoulder.getId());
             } else {
@@ -157,15 +160,17 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
         }
     }
 
-    private void updateHoldsDto(List<HoldDTO> holds, List<HoldDTO> currentHolds) {
+    private void updateHoldsDto(int boulderId, List<HoldDTO> holds) {
         if (holds != null && !holds.isEmpty()) {
             Instant now = Instant.now(clock);
             holds.forEach(
                     hold -> {
+                        hold.setId(null);
+                        hold.setBoulderId(boulderId);
                         hold.setCreatedDate(now);
                         hold.setUpdatedDate(now);
                     });
-            holdRepository.deleteByBoulderId(currentHolds.getFirst().getBoulderId());
+            holdRepository.deleteByBoulderId(boulderId);
             holdRepository.saveAll(holds);
         }
     }
@@ -192,12 +197,19 @@ public class BoulderUseCaseImpl implements BoulderUseCase {
     }
 
     private List<BoulderResponseDTO> addCreatorToBoulder(Page<BoulderDTO> boulders) {
+        Map<Integer, UserDTO> creators =
+                userRepository
+                        .findAllById(
+                                boulders.getContent().stream()
+                                        .map(BoulderDTO::getCreatorId)
+                                        .collect(Collectors.toSet()))
+                        .stream()
+                        .collect(Collectors.toMap(UserDTO::getId, Function.identity()));
         return boulders.getContent().stream()
                 .map(
-                        boulder -> {
-                            UserDTO creator = userRepository.findById(boulder.getCreatorId());
-                            return boulderMapper.toResponseDTO(boulder, creator);
-                        })
+                        boulder ->
+                                boulderMapper.toResponseDTO(
+                                        boulder, creators.get(boulder.getCreatorId())))
                 .toList();
     }
 }

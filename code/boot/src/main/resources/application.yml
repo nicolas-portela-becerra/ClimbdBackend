@@ -37,5 +37,9 @@ spring:
     locations: classpath:db/migration
     schemas: ${SPRING_DATASOURCE_USERNAME}
     default-schema: ${SPRING_DATASOURCE_USERNAME}
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
 server:
   port: 8080
+  forward-headers-strategy: native
