@@ -1,9 +1,15 @@
 package com.climbingapp.api.controller;
 
 import com.climbingapp.api.dto.ActivateUsers200Response;
+import com.climbingapp.api.dto.CurrentUserResponse;
 import com.climbingapp.api.dto.DeactivatedUsersResponse;
 import com.climbingapp.api.mapper.ApiDtoMapper;
+import com.climbingapp.domain.dto.UserDTO;
+import com.climbingapp.domain.exception.NotFoundException;
+import com.climbingapp.domain.repository.UserRepository;
+import com.climbingapp.domain.usecase.GymUseCase;
 import com.climbingapp.domain.usecase.UserUseCase;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +27,23 @@ public class UserController implements UsersApi {
 
     @Autowired private UserUseCase userUseCase;
 
+    @Autowired private UserRepository userRepository;
+
+    @Autowired private GymUseCase gymUseCase;
+
     @Autowired private ApiDtoMapper mapper;
+
+    @Override
+    public ResponseEntity<CurrentUserResponse> getCurrentUser() {
+        UserDTO user = userRepository.findById(AuthenticatedUser.current().getId());
+        if (user == null) {
+            throw new NotFoundException("Authenticated user does not exist.");
+        }
+        return ResponseEntity.ok(
+                new CurrentUserResponse()
+                        .user(mapper.toUserDto(user))
+                        .gymRoles(mapper.toApiGymRoles(gymUseCase.getGymRoles(user.getId()))));
+    }
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")

@@ -9,8 +9,10 @@ import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
+import com.climbingapp.domain.usecase.GymUseCase;
 import com.climbingapp.domain.usecase.UserUseCase;
 import com.climbingapp.infrastructure.entity.enums.Gender;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 import com.climbingapp.jwt.utils.JwtUserDetailsService;
 import com.climbingapp.jwt.utils.RefreshTokenService;
 import com.climbingapp.jwt.utils.TokenManager;
@@ -26,13 +28,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -50,6 +48,8 @@ public class AuthController implements AuthApi {
 
     @Autowired private UserUseCase userUseCase;
 
+    @Autowired private GymUseCase gymUseCase;
+
     @Autowired private ApiDtoMapper mapper;
 
     @Override
@@ -62,7 +62,7 @@ public class AuthController implements AuthApi {
         String accessToken = tokenManager.generateAccessToken(userDetails);
         String refreshToken = refreshTokenService.issue(userDetails, null);
         UserDTO user = userRepository.findByEmail(email);
-        log.info("Login successful for user {}", email);
+        log.info("Login successful for user {}", user.getId());
         return ResponseEntity.ok(buildAuthResponse(accessToken, refreshToken, user));
     }
 
@@ -80,7 +80,7 @@ public class AuthController implements AuthApi {
         UserDetails userDetails = buildUserDetails(credentials);
         String accessToken = tokenManager.generateAccessToken(userDetails);
         String refreshToken = refreshTokenService.issue(userDetails, null);
-        log.info("User registered: {}", savedUser.getEmail());
+        log.info("User registered: {}", savedUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(buildAuthResponse(accessToken, refreshToken, savedUser));
     }
@@ -94,7 +94,7 @@ public class AuthController implements AuthApi {
             UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(normalize(username));
             if (!userDetails.isEnabled()
                     || !tokenManager.validateRefreshToken(claims, userDetails)) {
-                log.warn("Refresh rejected for deactivated or invalid user {}", username);
+                log.warn("Refresh rejected for deactivated or invalid user");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             String jti = claims.getId();
@@ -102,17 +102,14 @@ public class AuthController implements AuthApi {
             if (jti == null || !refreshTokenService.consume(jti)) {
                 if (familyId != null) {
                     refreshTokenService.revokeFamily(familyId);
-                    log.warn(
-                            "Refresh token reuse detected for user {} — family {} revoked",
-                            username,
-                            familyId);
+                    log.warn("Refresh token reuse detected — family {} revoked", familyId);
                 }
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             String newAccessToken = tokenManager.generateAccessToken(userDetails);
             String newRefreshToken = refreshTokenService.issue(userDetails, familyId);
             UserDTO user = userRepository.findByEmail(normalize(username));
-            log.info("Refresh token rotated for user {}", username);
+            log.info("Refresh token rotated for user {}", user.getId());
             return ResponseEntity.ok(buildAuthResponse(newAccessToken, newRefreshToken, user));
         } catch (JwtException e) {
             log.error("Refreshing JWT Token: {}", e.getMessage());
@@ -127,7 +124,7 @@ public class AuthController implements AuthApi {
             String jti = claims.getId();
             if (jti != null) {
                 refreshTokenService.consume(jti);
-                log.info("Logout: refresh token revoked for user {}", claims.getSubject());
+                log.info("Logout: refresh token {} revoked", jti);
             }
         } catch (JwtException e) {
             log.debug("Logout called with invalid token: {}", e.getMessage());
@@ -139,7 +136,9 @@ public class AuthController implements AuthApi {
     public ResponseEntity<Void> authLogoutAll() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         refreshTokenService.revokeAllForUser(email);
-        log.info("Logout-all: all sessions revoked for user {}", email);
+        log.info(
+                "Logout-all: all sessions revoked for user {}",
+                AuthenticatedUser.current().getId());
         return ResponseEntity.noContent().build();
     }
 
@@ -154,10 +153,7 @@ public class AuthController implements AuthApi {
     }
 
     private UserDetails buildUserDetails(UserCredentials credentials) {
-        return new User(
-                credentials.email(),
-                credentials.passwordHash(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + credentials.role())));
+        return new AuthenticatedUser(credentials);
     }
 
     private String normalize(String email) {
@@ -168,6 +164,7 @@ public class AuthController implements AuthApi {
         return new AuthResponse()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(mapper.toUserDto(user));
+                .user(mapper.toUserDto(user))
+                .gymRoles(mapper.toApiGymRoles(gymUseCase.getGymRoles(user.getId())));
     }
 }

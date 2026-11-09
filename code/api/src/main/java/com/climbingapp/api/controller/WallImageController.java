@@ -8,6 +8,7 @@ import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.usecase.GymUseCase;
 import com.climbingapp.domain.usecase.WallImageUseCase;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
@@ -50,19 +51,18 @@ public class WallImageController implements WallImagesApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    @PreAuthorize("@gymSecurity.isStaff(#gymId, authentication)")
     public ResponseEntity<Void> uploadWallImage(
-            @PathVariable("gymId") Integer gymId,
-            MultipartFile image,
-            String wallName,
-            Integer uploadedBy) {
+            @PathVariable("gymId") Integer gymId, MultipartFile image, String wallName) {
         if (gymUseCase.getGymById(gymId) == null) {
             throw new NotFoundException("Gym with id " + gymId + " does not exist.");
         }
         validateImage(image);
         try {
-            WallImageDTO wallImage = buildImage(gymId, image, wallName, uploadedBy);
+            WallImageDTO wallImage = buildImage(gymId, image, wallName);
             wallImageUseCase.uploadWallImage(wallImage);
+        } catch (IllegalArgumentException e) {
+            throw e; // rejected image (e.g. too many pixels) -> 400
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -103,7 +103,7 @@ public class WallImageController implements WallImagesApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    @PreAuthorize("@gymSecurity.isStaff(#gymId, authentication)")
     public ResponseEntity<Void> updateWallImage(
             @PathVariable("wallImageId") Integer wallImageId,
             Integer gymId,
@@ -122,7 +122,7 @@ public class WallImageController implements WallImagesApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    @PreAuthorize("@gymSecurity.isStaff(#gymId, authentication)")
     public ResponseEntity<Void> deleteWallImage(
             @PathVariable("wallImageId") Integer wallImageId, Integer gymId) {
         if (!existsInGym(wallImageId, gymId)) {
@@ -137,15 +137,14 @@ public class WallImageController implements WallImagesApi {
         return wallImage != null && ObjectUtils.nullSafeEquals(wallImage.getGymId(), gymId);
     }
 
-    private WallImageDTO buildImage(
-            Integer gymId, MultipartFile image, String wallName, Integer uploadedBy) {
+    private WallImageDTO buildImage(Integer gymId, MultipartFile image, String wallName) {
         WallImageDTO wallImage = new WallImageDTO();
         wallImage.setGymId(gymId);
         wallImage.setWallName(wallName.trim());
         wallImage.setImageData(readBytes(image));
         wallImage.setThumbnail(new byte[0]);
         wallImage.setMimeType(image.getContentType());
-        wallImage.setUploadedBy(uploadedBy);
+        wallImage.setUploadedBy(AuthenticatedUser.current().getId());
         return wallImage;
     }
 

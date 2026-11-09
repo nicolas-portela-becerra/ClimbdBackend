@@ -5,6 +5,8 @@ import com.climbingapp.domain.exception.ConflictException;
 import com.climbingapp.domain.exception.ForbiddenException;
 import com.climbingapp.domain.exception.NotFoundException;
 
+import jakarta.validation.ConstraintViolationException;
+
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @Slf4j
 @RestControllerAdvice
@@ -47,7 +50,11 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler({MethodArgumentNotValidException.class})
+    @ExceptionHandler({
+        MethodArgumentNotValidException.class,
+        ConstraintViolationException.class,
+        HandlerMethodValidationException.class
+    })
     public ResponseEntity<ErrorResponse> handleBadRequestException() {
         return new ResponseEntity<>(
                 new ErrorResponse()

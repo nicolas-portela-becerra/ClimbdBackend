@@ -19,8 +19,8 @@ import com.climbingapp.domain.repository.BoulderRepository;
 import com.climbingapp.domain.repository.CompetitionParticipantRepository;
 import com.climbingapp.domain.repository.CompetitionRepository;
 import com.climbingapp.domain.repository.CompetitionResultRepository;
-import com.climbingapp.domain.repository.GymOwnerRepository;
 import com.climbingapp.domain.repository.GymRepository;
+import com.climbingapp.domain.repository.GymStaffRepository;
 import com.climbingapp.domain.repository.HoldRepository;
 import com.climbingapp.domain.repository.UserRepository;
 import com.climbingapp.domain.repository.WallImageRepository;
@@ -75,7 +75,7 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
 
     @Autowired private UserRepository userRepository;
 
-    @Autowired private GymOwnerRepository gymOwnerRepository;
+    @Autowired private GymStaffRepository gymStaffRepository;
 
     @Autowired private CompetitionResultRepository resultRepository;
 
@@ -189,8 +189,8 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
         CompetitionDTO competition = getCompetition(competitionId);
         boolean canManage =
                 isAdmin
-                        || gymOwnerRepository.existsByGymIdAndUserId(
-                                competition.getGymId(), userId);
+                        // Owners and setters prepare the boulders before the start
+                        || gymStaffRepository.findRole(competition.getGymId(), userId) != null;
 
         if (!canManage) {
             Instant now = Instant.now(clock);
@@ -324,7 +324,8 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
     public List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId) {
         getCompetition(competitionId);
         Instant now = Instant.now(clock);
-        return competitionResultRepository.getCompetitionRanking(competitionId, Timestamp.from(now));
+        return competitionResultRepository.getCompetitionRanking(
+                competitionId, Timestamp.from(now));
     }
 
     private void validateResults(int competitionId, List<CompetitionResultDTO> results) {

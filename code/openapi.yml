@@ -164,6 +164,27 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           description: Invalid Apple token
+  /api/users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Users]
+      summary: Get the logged-in user with their per-gym roles
+      description: Use it on app start and after a role change to decide which controls to show.
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+        '401':
+          description: Missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
   /api/users/deactivated:
     get:
       operationId: getDeactivated
@@ -267,6 +288,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of gyms
@@ -322,7 +345,7 @@ paths:
     put:
       operationId: updateGym
       tags: [Gyms]
-      summary: Update gym (admin or gym owner)
+      summary: Update gym, including its logo (admin or gym owner)
       parameters:
         - name: gymId
           in: path
@@ -367,11 +390,39 @@ paths:
           description: Gym not found
       security:
         - bearerAuth: []
-  /api/gyms/{gymId}/owners:
-    post:
-      operationId: assignGymOwner
+  /api/gyms/{gymId}/staff:
+    get:
+      operationId: listGymStaff
       tags: [Gyms]
-      summary: Assign a gym owner (admin only)
+      summary: List the owners and setters of a gym (admin or gym owner)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Gym staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GymStaffDto'
+        '403':
+          description: Forbidden - admin or gym owner only
+        '404':
+          description: Gym not found
+      security:
+        - bearerAuth: []
+    post:
+      operationId: addGymStaff
+      tags: [Gyms]
+      summary: Add a user to the gym staff, or change their role (admin or gym owner)
+      description: >-
+        Gym owners can only add or change SETTERs. Only an admin can grant, change or remove
+        the OWNER role.
       parameters:
         - name: gymId
           in: path
@@ -383,14 +434,59 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignOwnerRequest'
+              $ref: '#/components/schemas/AddGymStaffRequest'
       responses:
-        '201':
-          description: Owner assigned
+        '200':
+          description: Staff member added or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GymStaffDto'
         '403':
-          description: Forbidden - admin only
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Gym or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+  /api/gyms/{gymId}/staff/{userId}:
+    delete:
+      operationId: removeGymStaff
+      tags: [Gyms]
+      summary: Remove a user from the gym staff (admin or gym owner; only admins remove owners)
+      parameters:
+        - name: gymId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Staff member removed
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The user is not staff of this gym
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       security:
         - bearerAuth: []
   /api/gyms/{gymId}/wall-images:
@@ -414,6 +510,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of wall image summaries
@@ -426,7 +524,7 @@ paths:
     post:
       operationId: uploadWallImage
       tags: [Wall Images]
-      summary: Upload a wall image (admin or gym owner)
+      summary: Upload a wall image (admin or gym staff)
       parameters:
         - name: gymId
           in: path
@@ -602,6 +700,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of boulders
@@ -659,6 +759,8 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Paginated list of boulders on the wall image
@@ -693,7 +795,7 @@ paths:
     put:
       operationId: updateBoulder
       tags: [Boulders]
-      summary: Update boulder (creator only)
+      summary: Update boulder (creator, gym staff or admin)
       parameters:
         - name: boulderId
           in: path
@@ -728,7 +830,7 @@ paths:
     delete:
       operationId: deleteBoulder
       tags: [Boulders]
-      summary: Delete boulder (creator or admin)
+      summary: Delete boulder (creator, gym staff or admin)
       parameters:
         - name: boulderId
           in: path
@@ -754,7 +856,7 @@ paths:
     post:
       operationId: createCompetition
       tags: [Competitions]
-      summary: Create a competition for a gym (admin or gym owner)
+      summary: Create a competition for a gym (admin or gym staff)
       parameters:
         - name: gymId
           in: path
@@ -812,7 +914,7 @@ paths:
     put:
       operationId: updateCompetition
       tags: [Competitions]
-      summary: Replace a competition before it starts (admin or gym owner)
+      summary: Replace a competition before it starts (admin or gym staff)
       parameters:
         - name: competitionId
           in: path
@@ -920,7 +1022,7 @@ paths:
       summary: All boulders of a competition with their holds
       description: >-
         Only available from the start of the competition until 24 hours after it ends.
-        Admins and owners of the gym can see them at any time.
+        Admins and gym staff (owners and setters) can see them at any time.
       parameters:
         - name: competitionId
           in: path
@@ -949,7 +1051,7 @@ paths:
     post:
       operationId: createCompetitionBoulder
       tags: [Competitions]
-      summary: Create a competition boulder before it starts (admin or gym owner)
+      summary: Create a competition boulder before it starts (admin or gym staff)
       parameters:
         - name: competitionId
           in: path
@@ -991,7 +1093,7 @@ paths:
     put:
       operationId: updateCompetitionBoulder
       tags: [Competitions]
-      summary: Replace a competition boulder and its holds before it starts (admin or gym owner)
+      summary: Replace a competition boulder and its holds before it starts (admin or gym staff)
       parameters:
         - name: competitionId
           in: path
@@ -1037,7 +1139,7 @@ paths:
     delete:
       operationId: deleteCompetitionBoulder
       tags: [Competitions]
-      summary: Delete a competition boulder before it starts (admin or gym owner)
+      summary: Delete a competition boulder before it starts (admin or gym staff)
       parameters:
         - name: competitionId
           in: path
@@ -1147,7 +1249,7 @@ paths:
     get:
       operationId: getCompetitionRanking
       tags: [Competitions]
-      summary: Full ranking of a competition (admin or gym owner)
+      summary: Full ranking of a competition (admin or gym staff)
       description: >-
         One row per participant, with their section and gender so the frontend can filter it
         into the four groups. Sorted by totalPoints, then flashTops, then totalAttempts.
@@ -1197,6 +1299,7 @@ components:
           type: string
           format: email
         name:
+          maxLength: 255
           type: string
         password:
           type: string
@@ -1242,6 +1345,63 @@ components:
           type: string
         user:
           $ref: '#/components/schemas/UserDto'
+        gymRoles:
+          type: array
+          description: Gyms where the user is OWNER or SETTER. Empty for regular users.
+          items:
+            $ref: '#/components/schemas/UserGymRoleDto'
+    CurrentUserResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserDto'
+        gymRoles:
+          type: array
+          description: Gyms where the user is OWNER or SETTER. Empty for regular users.
+          items:
+            $ref: '#/components/schemas/UserGymRoleDto'
+    GymRole:
+      type: string
+      enum: [OWNER, SETTER]
+      description: >-
+        Role inside one gym. OWNER manages the gym and its staff. SETTER manages walls,
+        competitions and every boulder of the gym. OWNER can do everything a SETTER can.
+    UserGymRoleDto:
+      type: object
+      properties:
+        gymId:
+          type: integer
+        gymName:
+          type: string
+        role:
+          $ref: '#/components/schemas/GymRole'
+    GymStaffDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/GymRole'
+        assignedAt:
+          type: string
+          format: date-time
+          description: RFC 3339 date-time. Responses are always UTC (Z).
+    AddGymStaffRequest:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email of an existing user
+        role:
+          $ref: '#/components/schemas/GymRole'
     UserDto:
       type: object
       properties:
@@ -1305,46 +1465,47 @@ components:
         - timeZone
       properties:
         name:
+          maxLength: 255
           type: string
         timeZone:
           type: string
           example: Europe/Madrid
           description: IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
+          maxLength: 255
           type: string
         description:
+          maxLength: 2000
           type: string
-        createdBy:
-          type: integer
         logo:
           type: string
           format: byte
+          maxLength: 2097152 # 2 MB
           nullable: true
     UpdateGymRequest:
       type: object
       properties:
         name:
+          maxLength: 255
           type: string
         timeZone:
           type: string
           example: Europe/Madrid
           description: Optional. IANA time zone of the gym (region id such as Europe/Madrid, not a fixed offset). Competition times are shown in this zone.
         location:
+          maxLength: 255
           type: string
           nullable: true
         description:
+          maxLength: 2000
           type: string
           nullable: true
-    AssignOwnerRequest:
-      type: object
-      required:
-        - userId
-        - assignedBy
-      properties:
-        userId:
-          type: integer
-        assignedBy:
-          type: integer
+        logo:
+          type: string
+          format: byte
+          maxLength: 2097152 # 2 MB
+          nullable: true
+          description: New logo. Omit to keep the current one
     WallImageSummary:
       type: object
       properties:
@@ -1402,7 +1563,6 @@ components:
       required:
         - image
         - wallName
-        - uploadedBy
       properties:
         image:
           type: string
@@ -1411,9 +1571,6 @@ components:
         wallName:
           type: string
           description: Name of the physical wall (e.g. "Cave", "Slab Left")
-        uploadedBy:
-          type: integer
-          description: ID of the user who uploaded the image
 
     BoulderDto:
       type: object
@@ -1476,20 +1633,21 @@ components:
         - grade
         - wallImageId
         - holds
-        - createdBy
       properties:
         name:
+          maxLength: 255
           type: string
         grade:
+          maxLength: 10
           type: string
           description: Fontainebleau grade (e.g. 6A+, 7B)
         description:
+          maxLength: 2000
           type: string
         wallImageId:
           type: integer
-        createdBy:
-          type: integer
         holds:
+          maxItems: 200
           type: array
           minItems: 1
           items:
@@ -1498,19 +1656,19 @@ components:
       type: object
       properties:
         name:
+          maxLength: 255
           type: string
         grade:
+          maxLength: 10
           type: string
         description:
+          maxLength: 2000
           type: string
           nullable: true
-        creatorId:
-          type: integer
-        gymId:
-          type: integer
         wallImageId:
           type: integer
         holds:
+          maxItems: 200
           type: array
           items:
             $ref: '#/components/schemas/HoldDto'
@@ -1548,12 +1706,18 @@ components:
         coordX:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
         coordY:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
         radiusRatio:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
         color:
           type: integer
           nullable: true
@@ -1646,6 +1810,7 @@ components:
         - dateTo
       properties:
         name:
+          maxLength: 255
           type: string
         type:
           $ref: '#/components/schemas/CompetitionType'
@@ -1766,11 +1931,14 @@ components:
         - holds
       properties:
         name:
+          maxLength: 255
           type: string
         grade:
+          maxLength: 10
           type: string
           description: Fontainebleau grade (e.g. 6A+, 7B)
         description:
+          maxLength: 2000
           type: string
           nullable: true
         wallImageId:
@@ -1781,6 +1949,7 @@ components:
           nullable: true
           description: Required for ALL_OR_NOTHING competitions, must be empty for X_ATTEMPTS
         holds:
+          maxItems: 200
           type: array
           minItems: 1
           items:

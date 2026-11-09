@@ -15,11 +15,12 @@ import com.climbingapp.domain.exception.ConflictException;
 import com.climbingapp.domain.exception.ForbiddenException;
 import com.climbingapp.domain.repository.CompetitionParticipantRepository;
 import com.climbingapp.domain.repository.CompetitionRepository;
-import com.climbingapp.domain.repository.GymOwnerRepository;
 import com.climbingapp.domain.repository.GymRepository;
+import com.climbingapp.domain.repository.GymStaffRepository;
 import com.climbingapp.domain.usecase.BoulderUseCase;
 import com.climbingapp.infrastructure.entity.enums.CompetitionSection;
 import com.climbingapp.infrastructure.entity.enums.CompetitionType;
+import com.climbingapp.infrastructure.entity.enums.GymRole;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class CompetitionUseCaseImplTest {
 
     @Mock private CompetitionRepository competitionRepository;
     @Mock private CompetitionParticipantRepository participantRepository;
-    @Mock private GymOwnerRepository gymOwnerRepository;
+    @Mock private GymStaffRepository gymStaffRepository;
     @Mock private GymRepository gymRepository;
     @Mock private BoulderUseCase boulderUseCase;
 
@@ -57,7 +58,7 @@ class CompetitionUseCaseImplTest {
         useAt(NOW);
         ReflectionTestUtils.setField(useCase, "competitionRepository", competitionRepository);
         ReflectionTestUtils.setField(useCase, "participantRepository", participantRepository);
-        ReflectionTestUtils.setField(useCase, "gymOwnerRepository", gymOwnerRepository);
+        ReflectionTestUtils.setField(useCase, "gymStaffRepository", gymStaffRepository);
         ReflectionTestUtils.setField(useCase, "gymRepository", gymRepository);
         ReflectionTestUtils.setField(useCase, "boulderUseCase", boulderUseCase);
     }
@@ -169,7 +170,7 @@ class CompetitionUseCaseImplTest {
         Instant from = NOW.plus(Duration.ofHours(1));
         Instant to = from.plus(Duration.ofHours(2));
         when(competitionRepository.findById(1)).thenReturn(competition(from, to, 5));
-        when(gymOwnerRepository.existsByGymIdAndUserId(10, 5)).thenReturn(false);
+        when(gymStaffRepository.findRole(10, 5)).thenReturn(null);
 
         assertThrows(ForbiddenException.class, () -> useCase.getCompetitionBoulders(1, 5, false));
 
@@ -178,6 +179,16 @@ class CompetitionUseCaseImplTest {
 
         useAt(to.plus(Duration.ofHours(24)).plusSeconds(1));
         assertThrows(ForbiddenException.class, () -> useCase.getCompetitionBoulders(1, 5, false));
+    }
+
+    @Test
+    void settersSeeTheBouldersBeforeTheStart() {
+        Instant from = NOW.plus(Duration.ofHours(1));
+        when(competitionRepository.findById(1))
+                .thenReturn(competition(from, from.plus(Duration.ofHours(2)), 5));
+        when(gymStaffRepository.findRole(10, 5)).thenReturn(GymRole.SETTER);
+
+        assertDoesNotThrow(() -> useCase.getCompetitionBoulders(1, 5, false));
     }
 
     // ---- creation -----------------------------------------------------------------------

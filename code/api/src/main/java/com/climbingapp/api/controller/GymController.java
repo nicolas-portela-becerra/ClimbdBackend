@@ -1,14 +1,17 @@
 package com.climbingapp.api.controller;
 
-import com.climbingapp.api.dto.AssignOwnerRequest;
+import com.climbingapp.api.dto.AddGymStaffRequest;
 import com.climbingapp.api.dto.CreateGymRequest;
 import com.climbingapp.api.dto.GymDto;
 import com.climbingapp.api.dto.GymPageResponse;
+import com.climbingapp.api.dto.GymStaffDto;
 import com.climbingapp.api.dto.UpdateGymRequest;
 import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.GymDTO;
-import com.climbingapp.domain.repository.UserRepository;
+import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.usecase.GymUseCase;
+import com.climbingapp.infrastructure.entity.enums.GymRole;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,24 +22,23 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 public class GymController implements GymsApi {
 
     @Autowired private GymUseCase gymUseCase;
 
-    @Autowired private UserRepository userRepository;
-
     @Autowired private ApiDtoMapper mapper;
 
     @Override
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     public ResponseEntity<GymPageResponse> listGyms(Integer page, Integer size) {
         Page<GymDTO> gyms = gymUseCase.getAllGyms(PageRequest.of(page, size));
         return ResponseEntity.ok(mapper.toGymPage(gyms));
     }
 
     @Override
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GymDto> createGym(CreateGymRequest createGymRequest) {
         GymDTO gym = buildGymDto(createGymRequest);
         GymDTO saved = gymUseCase.createGym(gym);
@@ -44,17 +46,16 @@ public class GymController implements GymsApi {
     }
 
     @Override
-    public ResponseEntity<Void> deleteGym(Integer gymId) {
-        try {
-            gymUseCase.deleteGymById(gymId);
-            return ResponseEntity.ok().build();
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteGym(@PathVariable("gymId") Integer gymId) {
+        if (gymUseCase.getGymById(gymId) == null) {
+            throw new NotFoundException("Gym with id " + gymId + " does not exist.");
         }
+        gymUseCase.deleteGymById(gymId);
+        return ResponseEntity.noContent().build();
     }
 
     @Override
-    @PreAuthorize("hasRole('USER') || hasRole('ADMIN')")
     public ResponseEntity<GymDto> getGymById(@PathVariable("gymId") Integer gymId) {
         GymDTO gym = gymUseCase.getGymById(gymId);
         if (gym == null) {
@@ -64,26 +65,43 @@ public class GymController implements GymsApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or @gymSecurity.isOwner(#gymId, authentication)")
+    @PreAuthorize("@gymSecurity.isOwner(#gymId, authentication)")
     public ResponseEntity<GymDto> updateGym(
             @PathVariable("gymId") Integer gymId, UpdateGymRequest updateGymRequest) {
-        GymDTO gym = buildGymDto(gymId, updateGymRequest);
-        GymDTO savedGym = gymUseCase.updateGym(gym);
-
+        GymDTO savedGym = gymUseCase.updateGym(buildGymDto(gymId, updateGymRequest));
         if (savedGym == null) {
             return ResponseEntity.notFound().build();
-        } else {
-            return ResponseEntity.ok(mapper.toApiGym(savedGym));
         }
+        return ResponseEntity.ok(mapper.toApiGym(savedGym));
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> assignGymOwner(
-            @PathVariable("gymId") Integer gymId, AssignOwnerRequest assignOwnerRequest) {
-        gymUseCase.assignGymOwner(
-                gymId, assignOwnerRequest.getUserId(), assignOwnerRequest.getAssignedBy());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    @PreAuthorize("@gymSecurity.isOwner(#gymId, authentication)")
+    public ResponseEntity<List<GymStaffDto>> listGymStaff(@PathVariable("gymId") Integer gymId) {
+        return ResponseEntity.ok(mapper.toApiStaff(gymUseCase.getGymStaff(gymId)));
+    }
+
+    @Override
+    @PreAuthorize("@gymSecurity.isOwner(#gymId, authentication)")
+    public ResponseEntity<GymStaffDto> addGymStaff(
+            @PathVariable("gymId") Integer gymId, AddGymStaffRequest addGymStaffRequest) {
+        AuthenticatedUser actor = AuthenticatedUser.current();
+        return ResponseEntity.ok(
+                mapper.toApiStaff(
+                        gymUseCase.addGymStaff(
+                                gymId,
+                                addGymStaffRequest.getEmail(),
+                                GymRole.valueOf(addGymStaffRequest.getRole().name()),
+                                actor.getId(),
+                                actor.isAdmin())));
+    }
+
+    @Override
+    @PreAuthorize("@gymSecurity.isOwner(#gymId, authentication)")
+    public ResponseEntity<Void> removeGymStaff(
+            @PathVariable("gymId") Integer gymId, @PathVariable("userId") Integer userId) {
+        gymUseCase.removeGymStaff(gymId, userId, AuthenticatedUser.current().isAdmin());
+        return ResponseEntity.noContent().build();
     }
 
     private GymDTO buildGymDto(CreateGymRequest createGymRequest) {
@@ -91,7 +109,7 @@ public class GymController implements GymsApi {
         gym.setName(createGymRequest.getName());
         gym.setLocation(createGymRequest.getLocation());
         gym.setDescription(createGymRequest.getDescription());
-        gym.setCreatorId(createGymRequest.getCreatedBy());
+        gym.setCreatorId(AuthenticatedUser.current().getId());
         gym.setTimeZone(createGymRequest.getTimeZone());
         gym.setLogo(createGymRequest.getLogo());
         return gym;
@@ -104,6 +122,7 @@ public class GymController implements GymsApi {
         gym.setLocation(updateGymRequest.getLocation());
         gym.setName(updateGymRequest.getName());
         gym.setTimeZone(updateGymRequest.getTimeZone());
+        gym.setLogo(updateGymRequest.getLogo());
         return gym;
     }
 }

@@ -50,4 +50,24 @@ public class WallImageEntity {
 
     @Column(name = "uploaded_date", nullable = false)
     private Instant uploadedDate;
+
+    /** Blob-free projection used by list queries. */
+    public WallImageEntity(
+            Integer id,
+            Integer gymId,
+            String wallName,
+            String mimeType,
+            Integer widthPx,
+            Integer heightPx,
+            Integer uploadedBy,
+            Instant uploadedDate) {
+        this.id = id;
+        this.gymId = gymId;
+        this.wallName = wallName;
+        this.mimeType = mimeType;
+        this.widthPx = widthPx;
+        this.heightPx = heightPx;
+        this.uploadedBy = uploadedBy;
+        this.uploadedDate = uploadedDate;
+    }
 }

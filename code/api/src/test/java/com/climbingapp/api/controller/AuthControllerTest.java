@@ -20,8 +20,10 @@ import com.climbingapp.api.mapper.ApiDtoMapper;
 import com.climbingapp.domain.dto.UserCredentials;
 import com.climbingapp.domain.dto.UserDTO;
 import com.climbingapp.domain.repository.UserRepository;
+import com.climbingapp.domain.usecase.GymUseCase;
 import com.climbingapp.domain.usecase.UserUseCase;
 import com.climbingapp.infrastructure.entity.enums.Gender;
+import com.climbingapp.jwt.utils.AuthenticatedUser;
 import com.climbingapp.jwt.utils.JwtUserDetailsService;
 import com.climbingapp.jwt.utils.RefreshTokenService;
 import com.climbingapp.jwt.utils.TokenManager;
@@ -40,12 +42,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
-import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -62,18 +61,21 @@ class AuthControllerTest {
 
     @Mock private UserUseCase userUseCase;
 
+    @Mock private GymUseCase gymUseCase;
+
     @Mock private ApiDtoMapper mapper;
 
     @InjectMocks private AuthController controller;
 
-    private UserDetails userDetails;
+    private AuthenticatedUser userDetails;
 
     private UserDTO userDto;
 
     @BeforeEach
     void setUp() {
         userDetails =
-                new User("user@test.com", "hash", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                new AuthenticatedUser(
+                        new UserCredentials(1, "user@test.com", "hash", "USER", true));
         userDto =
                 new UserDTO(
                         1,
