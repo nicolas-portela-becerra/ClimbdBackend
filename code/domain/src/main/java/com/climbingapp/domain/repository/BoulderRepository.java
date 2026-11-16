@@ -5,6 +5,8 @@ import com.climbingapp.domain.dto.BoulderDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 public interface BoulderRepository {
@@ -30,4 +32,10 @@ public interface BoulderRepository {
     boolean existsByIdAndCreatorId(Integer id, Integer creatorId);
 
     boolean existsByWallImageId(Integer wallImageId);
+
+    /**
+     * Turns the competition's boulders into regular ones (no competition, end date appended to the
+     * name). The competition's results must be deleted first. Returns how many were updated.
+     */
+    int retireCompetitionBoulders(Collection<Integer> competitionIds, Instant now);
 }

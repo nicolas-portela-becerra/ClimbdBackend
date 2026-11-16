@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -68,6 +69,11 @@ public class CompetitionResultRepositoryImpl implements CompetitionResultReposit
     @Override
     public void deleteById(Integer id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteByCompetitionIds(Collection<Integer> competitionIds) {
+        jpaRepository.deleteByCompetitionIdIn(competitionIds);
     }
 
     @Override

@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -51,5 +52,15 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     public List<CompetitionDTO> findNotEndedByGymId(Integer gymId, Instant endedAfter) {
         return mapper.toDtoList(
                 jpaRepository.findByGymIdAndDateToAfterOrderByDateFromAsc(gymId, endedAfter));
+    }
+
+    @Override
+    public List<Integer> findClosedIds(Instant now) {
+        return jpaRepository.findClosedIds(now);
+    }
+
+    @Override
+    public void deleteByIds(Collection<Integer> ids) {
+        jpaRepository.deleteByIdIn(ids);
     }
 }

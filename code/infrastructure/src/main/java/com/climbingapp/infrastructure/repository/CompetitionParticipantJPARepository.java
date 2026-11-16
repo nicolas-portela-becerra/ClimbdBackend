@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,9 @@ public interface CompetitionParticipantJPARepository
             Integer competitionId, Integer userId);
 
     boolean existsByCompetitionIdAndUserId(Integer competitionId, Integer userId);
+
+    @Modifying(clearAutomatically = true)
+    void deleteByCompetitionIdIn(@Param("competitionIds") Collection<Integer> competitionIds);
 
     /** Stores the snapshot only if it's newer. Returns 0 when it was older or equal. */
     @Modifying(clearAutomatically = true)

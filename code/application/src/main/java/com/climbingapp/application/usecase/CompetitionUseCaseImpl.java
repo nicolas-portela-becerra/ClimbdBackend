@@ -5,6 +5,7 @@ import com.climbingapp.domain.dto.CompetitionAnnouncementDTO;
 import com.climbingapp.domain.dto.CompetitionBoulderDTO;
 import com.climbingapp.domain.dto.CompetitionDTO;
 import com.climbingapp.domain.dto.CompetitionParticipantDTO;
+import com.climbingapp.domain.dto.CompetitionRankingDTO;
 import com.climbingapp.domain.dto.CompetitionRankingRecord;
 import com.climbingapp.domain.dto.CompetitionResultDTO;
 import com.climbingapp.domain.dto.CompetitionStatus;
@@ -17,6 +18,7 @@ import com.climbingapp.domain.exception.ForbiddenException;
 import com.climbingapp.domain.exception.NotFoundException;
 import com.climbingapp.domain.repository.BoulderRepository;
 import com.climbingapp.domain.repository.CompetitionParticipantRepository;
+import com.climbingapp.domain.repository.CompetitionRankingRepository;
 import com.climbingapp.domain.repository.CompetitionRepository;
 import com.climbingapp.domain.repository.CompetitionResultRepository;
 import com.climbingapp.domain.repository.GymRepository;
@@ -78,6 +80,8 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
     @Autowired private GymStaffRepository gymStaffRepository;
 
     @Autowired private CompetitionResultRepository resultRepository;
+
+    @Autowired private CompetitionRankingRepository competitionRankingRepository;
 
     @Autowired private BoulderUseCase boulderUseCase;
 
@@ -322,6 +326,21 @@ public class CompetitionUseCaseImpl implements CompetitionUseCase {
 
     @Override
     public List<CompetitionRankingRecord> getCompetitionRanking(Integer competitionId) {
+        List<CompetitionRankingDTO> history =
+                competitionRankingRepository.findByCompetitionId(competitionId);
+        if (!history.isEmpty()) {
+            return history.stream()
+                    .map(
+                            r ->
+                                    new CompetitionRankingRecord(
+                                            r.getUserName(),
+                                            r.getSection().name(),
+                                            r.getGender().name(),
+                                            r.getTotalPoints(),
+                                            r.getTotalAttempts(),
+                                            r.getFlashTops()))
+                    .toList();
+        }
         getCompetition(competitionId);
         Instant now = Instant.now(clock);
         return competitionResultRepository.getCompetitionRanking(
