@@ -9,6 +9,7 @@ import com.climbingapp.infrastructure.repository.CompetitionParticipantJPAReposi
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -56,5 +57,10 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
     @Override
     public void deleteById(Integer id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteByCompetitionIds(Collection<Integer> competitionIds) {
+        jpaRepository.deleteByCompetitionIdIn(competitionIds);
     }
 }

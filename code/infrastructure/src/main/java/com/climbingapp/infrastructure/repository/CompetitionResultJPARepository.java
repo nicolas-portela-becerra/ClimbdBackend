@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,9 @@ public interface CompetitionResultJPARepository
 
     Optional<CompetitionResultEntity> findByParticipantIdAndBoulderId(
             Integer participantId, Integer boulderId);
+
+    @Modifying(clearAutomatically = true)
+    void deleteByCompetitionIdIn(@Param("competitionIds") Collection<Integer> competitionIds);
 
     /**
      * Inserts or overwrites the participant's result for every given boulder in one statement,

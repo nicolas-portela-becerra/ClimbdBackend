@@ -2,6 +2,7 @@ package com.climbingapp.domain.repository;
 
 import com.climbingapp.domain.dto.CompetitionParticipantDTO;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface CompetitionParticipantRepository {
@@ -20,4 +21,7 @@ public interface CompetitionParticipantRepository {
     CompetitionParticipantDTO save(CompetitionParticipantDTO participant);
 
     void deleteById(Integer id);
+
+    /** Deletes every participant of the given competitions. Their results must be gone first. */
+    void deleteByCompetitionIds(Collection<Integer> competitionIds);
 }

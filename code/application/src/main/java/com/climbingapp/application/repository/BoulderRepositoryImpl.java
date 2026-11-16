@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -77,5 +79,10 @@ public class BoulderRepositoryImpl implements BoulderRepository {
     @Override
     public boolean existsByWallImageId(Integer wallImageId) {
         return jpaRepository.existsByWallImageId(wallImageId);
+    }
+
+    @Override
+    public int retireCompetitionBoulders(Collection<Integer> competitionIds, Instant now) {
+        return jpaRepository.retireCompetitionBoulders(competitionIds, now);
     }
 }
